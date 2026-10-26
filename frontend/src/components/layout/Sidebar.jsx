@@ -60,13 +60,6 @@ export default function Sidebar({ isOpen, onClose }) {
           </NavLink>
         ))}
       </nav>
-
-      <div className="mx-4 mb-5 rounded-2xl bg-slate-50 p-4">
-        <p className="text-xs font-semibold text-slate-900">Your workspace</p>
-        <p className="mt-1 text-xs leading-5 text-slate-500">
-          Organize and explore your knowledge base in one place.
-        </p>
-      </div>
     </aside>
   )
 }
