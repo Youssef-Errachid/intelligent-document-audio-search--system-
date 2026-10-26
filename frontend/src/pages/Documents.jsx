@@ -2,11 +2,9 @@ import {
   FileUp,
   FileText,
   FileSearch,
-  FileCheck,
   Upload,
   ArrowLeft,
   ArrowRight,
-  FileType,
   X,
   CheckCircle2,
 } from 'lucide-react'
