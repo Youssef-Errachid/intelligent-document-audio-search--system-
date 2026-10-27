@@ -1,4 +1,6 @@
+
 from pathlib import Path
+import time
 
 import whisper
 
@@ -12,19 +14,29 @@ def get_model():
     global _model
 
     if _model is None:
-        _model = whisper.load_model("small")
+        print("[Whisper] Loading base model...", flush=True)
+        _model = whisper.load_model("base")
+        print("[Whisper] Model loaded.", flush=True)
 
     return _model
 
 
 def transcribe_audio(file_path: str | Path) -> dict:
-    """Transcribe an audio file and return text, language and segments."""
+    """Transcribe audio and return text, language and segments."""
     path = validate_audio_file(file_path)
+
+    print(f"[Whisper] Starting: {path.name}", flush=True)
+    start_time = time.time()
 
     result = get_model().transcribe(
         str(path),
         fp16=False,
         verbose=False,
+    )
+
+    print(
+        f"[Whisper] Finished in {time.time() - start_time:.1f}s",
+        flush=True,
     )
 
     segments = [
