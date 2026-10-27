@@ -7,6 +7,7 @@ const pageTitles = {
   '/': 'Dashboard',
   '/search': 'Search',
   '/documents': 'Documents',
+  '/upload/documents': 'Extract Documents',
   '/audio': 'Audio Files',
   '/assistant': 'AI Assistant',
   '/settings': 'Settings',

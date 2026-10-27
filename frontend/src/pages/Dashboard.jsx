@@ -24,7 +24,7 @@ const actions = [
     title: 'Extract Documents',
     description: 'Upload files and extract their text and information.',
     icon: FileCheck2Icon,
-    path: '/documents',
+    path: '/upload/documents',
   },
   {
     title: 'Extract Audio',

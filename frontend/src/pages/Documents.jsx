@@ -1,181 +1,123 @@
-import {
-  FileUp,
-  FileText,
-  FileSearch,
-  Upload,
-  ArrowLeft,
-  ArrowRight,
-  X,
-  CheckCircle2,
-} from 'lucide-react'
-import { useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, Upload } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import DocumentCard from '../components/documents/DocumentCard'
+import useDocuments from '../hooks/useDocuments'
 
-const supportedFormats = ['PDF', 'DOCX', 'TXT', 'CSV', 'XML']
+const PAGE_SIZE = 10
 
-export default function FileExtraction() {
-  const inputRef = useRef(null)
-  const [file, setFile] = useState(null)
-  const [error, setError] = useState('')
+const filters = [
+  { label: 'All', value: null },
+  { label: 'PDF', value: 'pdf' },
+  { label: 'DOCX', value: 'docx' },
+  { label: 'CSV', value: 'csv' },
+  { label: 'XML', value: 'xml' },
+  { label: 'Audio', value: 'audio' },
+]
 
-  const handleFile = (selectedFile) => {
-    if (!selectedFile) return
+export default function Documents() {
+  const [type, setType] = useState(null)
+  const [page, setPage] = useState(0)
+  const { items, total, error, isLoading } = useDocuments({
+    type,
+    page,
+    pageSize: PAGE_SIZE,
+  })
 
-    const extension = selectedFile.name.split('.').pop().toLowerCase()
+  const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1)
 
-    if (!supportedFormats.map((format) => format.toLowerCase()).includes(extension)) {
-      setError('Unsupported file format. Please upload PDF, DOCX, TXT, CSV, or XML.')
-      setFile(null)
-      return
-    }
-
-    setError('')
-    setFile(selectedFile)
-  }
-
-  const formatSize = (bytes) => {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
-  }
-
-  const removeFile = () => {
-    setFile(null)
-    setError('')
-    if (inputRef.current) inputRef.current.value = ''
+  const changeType = (value) => {
+    setType(value)
+    setPage(0) // a new filter starts again from the first page
   }
 
   return (
-    <div className="min-h-screen space-y-8 bg-slate-50/50 p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <section>
-        <Link
-          to="/"
-          className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-indigo-600"
-        >
-          <ArrowLeft size={17} />
-          Back to Dashboard
-        </Link>
-
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-            <FileSearch size={30} />
-          </div>
-
+      <section className="mx-auto max-w-4xl space-y-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Extract from Documents
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-              Upload a document to extract its text and prepare its content
-              for searching and analysis.
+            <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+              Library
+            </p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+              Documents
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              {isLoading ? 'Loading...' : `${total} item${total === 1 ? '' : 's'}`}
             </p>
           </div>
-        </div>
-      </section>
-
-      {/* Upload area */}
-      <section className="mx-auto w-full max-w-4xl">
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              inputRef.current?.click()
-            }
-          }}
-          className="cursor-pointer rounded-3xl border-2 border-dashed border-slate-300 bg-white px-5 py-12 text-center transition hover:border-emerald-400 hover:bg-emerald-50/30 sm:px-10 sm:py-16"
-        >
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
-            <FileUp size={48} strokeWidth={1.7} />
-          </div>
-
-          <h2 className="mt-7 text-xl font-bold text-slate-900 sm:text-2xl">
-            Upload your document
-          </h2>
-
-          <p className="mt-3 text-sm text-slate-500 sm:text-base">
-            Drag and drop your file here, or click to browse.
-          </p>
-
-          <p className="mt-3 text-xs font-medium text-slate-400 sm:text-sm">
-            Supported formats: PDF, DOCX, TXT, CSV, XML
-          </p>
-
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation()
-              inputRef.current?.click()
-            }}
-            className="mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+          <Link
+              to="/upload/documents"
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
           >
-            <Upload size={18} />
-            Choose File
-          </button>
+            <Upload size={16} aria-hidden="true" />
+            Upload document
+          </Link>
+        </div>
 
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".pdf,.docx,.txt,.csv,.xml"
-            className="hidden"
-            onChange={(event) => handleFile(event.target.files?.[0])}
-          />
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by type">
+          {filters.map((filter) => (
+              <button
+                  key={filter.label}
+                  type="button"
+                  onClick={() => changeType(filter.value)}
+                  aria-pressed={type === filter.value}
+                  className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                      type === filter.value
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
+                  }`}
+              >
+                {filter.label}
+              </button>
+          ))}
         </div>
 
         {error && (
-          <p role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-            {error}
-          </p>
+            <div
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {error}
+            </div>
         )}
 
-        {/* Selected file */}
-        {file && (
-          <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                <FileText size={25} />
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-slate-900">
-                  {file.name}
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {formatSize(file.size)} · Ready to process
-                </p>
-              </div>
-
-              <CheckCircle2 className="shrink-0 text-emerald-600" size={21} />
+        {!isLoading && !error && items.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+              No documents found.
             </div>
+        )}
 
-            <button
-              type="button"
-              onClick={removeFile}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-            >
-              <X size={16} />
-              Remove
-            </button>
-          </div>
+        <div className="space-y-3" aria-live="polite">
+          {items.map((item) => (
+              <DocumentCard key={item.id} item={item} />
+          ))}
+        </div>
+
+        {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <button
+                  type="button"
+                  onClick={() => setPage((current) => current - 1)}
+                  disabled={page === 0}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+                Previous
+              </button>
+              <span className="text-sm text-slate-500">
+            Page {page + 1} of {totalPages}
+          </span>
+              <button
+                  type="button"
+                  onClick={() => setPage((current) => current + 1)}
+                  disabled={page + 1 >= totalPages}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
+            </div>
         )}
       </section>
-
-      {/* Next action */}
-      {file && (
-        <div className="mx-auto flex w-full max-w-4xl justify-end">
-          <button
-            type="button"
-            disabled
-            title="Connect the extraction API to enable this action"
-            className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-slate-300 px-6 py-3 text-sm font-semibold text-white"
-          >
-            Extract Content
-            <ArrowRight size={18} />
-          </button>
-        </div>
-      )}
-    </div>
   )
 }
