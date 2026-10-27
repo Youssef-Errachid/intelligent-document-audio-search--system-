@@ -16,6 +16,7 @@ pydantic-settings==2.16.1
 pydantic_core==2.50.1
 pymongo==4.19.0
 python-dotenv==1.2.4
+python-multipart==0.0.32
 PyYAML==6.0.3
 starlette==1.10.0
 typing-inspection==0.4.4
