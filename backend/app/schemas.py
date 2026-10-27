@@ -30,3 +30,12 @@ class DocumentListResponse(BaseModel):
     skip: int
     limit: int
     items: list[DocumentSummary]
+
+
+class UploadResponse(BaseModel):
+    id: str
+    source_path: str
+    type: str
+    status: str
+    duplicate: bool = False
+    characters: int | None = None
