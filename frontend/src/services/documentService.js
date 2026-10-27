@@ -12,3 +12,14 @@ export async function listDocuments({
     const { data } = await api.get('/documents', { params, signal })
     return data
 }
+
+export async function uploadDocument(file, { signal } = {}) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const { data } = await api.post('/documents', formData, {
+        signal,
+        timeout: 120000,
+    })
+    return data
+}
