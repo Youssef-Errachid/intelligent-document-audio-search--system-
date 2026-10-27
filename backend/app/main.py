@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.database import client
-from app.routers import health, search
+from app.routers import documents, health, search
 
 
 @asynccontextmanager
@@ -21,6 +21,7 @@ app = FastAPI(
 
 app.include_router(health.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
+app.include_router(documents.router, prefix="/api")
 
 
 @app.get("/")
