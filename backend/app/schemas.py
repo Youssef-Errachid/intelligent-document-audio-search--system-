@@ -14,3 +14,19 @@ class SearchResponse(BaseModel):
     query: str
     mode: str
     results: list[SearchResult]
+
+
+class DocumentSummary(BaseModel):
+    id: str
+    source_path: str
+    type: str
+    language: str | None = None
+    status: str | None = None
+    preview: str
+
+
+class DocumentListResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    items: list[DocumentSummary]
