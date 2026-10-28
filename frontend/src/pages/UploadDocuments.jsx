@@ -1,220 +1,279 @@
-import {
-  FileUp,
-  FileText,
-  FileSearch,
-  Upload,
-  ArrowLeft,
-  ArrowRight,
-  X,
-  CheckCircle2,
-  Loader2,
-} from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import useUploadDocument from '../hooks/useUploadDocument'
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Clock3,
+  Copy,
+  FileSearch,
+  FileText,
+  FileUp,
+  Loader2,
+  X,
+} from 'lucide-react'
+import Pagination from '../components/common/Pagination'
+import useUploadQueue from '../hooks/useUploadQueue'
+import { uploadDocument } from '../services/documentService'
 
-const supportedFormats = ['PDF', 'DOCX', 'TXT', 'CSV', 'XML']
+const ACCEPTED_TYPES = ['.pdf', '.docx', '.txt', '.csv', '.xml']
+const MAX_SIZE = 50 * 1024 * 1024
+const PAGE_SIZE = 5
+
+const STATUS = {
+  pending: { label: 'Waiting', icon: Clock3, style: 'bg-slate-100 text-slate-600' },
+  uploading: { label: 'Uploading', icon: Loader2, style: 'bg-emerald-50 text-emerald-700', spin: true },
+  processing: { label: 'Extracting', icon: Loader2, style: 'bg-sky-50 text-sky-700', spin: true },
+  done: { label: 'Done', icon: CheckCircle2, style: 'bg-emerald-50 text-emerald-700' },
+  duplicate: { label: 'Already exists', icon: Copy, style: 'bg-amber-50 text-amber-700' },
+  error: { label: 'Failed', icon: AlertCircle, style: 'bg-red-50 text-red-700' },
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function validate(file) {
+  const extension = `.${file.name.split('.').pop().toLowerCase()}`
+  if (!ACCEPTED_TYPES.includes(extension)) return 'unsupported format'
+  if (file.size === 0) return 'empty file'
+  if (file.size > MAX_SIZE) return 'larger than 50 MB'
+  return null
+}
 
 export default function UploadDocuments() {
   const inputRef = useRef(null)
-  const [file, setFile] = useState(null)
-  const [error, setError] = useState('')
-  const { upload, reset, isUploading, result, error: uploadError } = useUploadDocument()
+  const [rejected, setRejected] = useState([])
+  const [page, setPage] = useState(0)
+  const { items, isBusy, addFiles, removeItem, clearFinished, retry } =
+      useUploadQueue(uploadDocument)
 
-  const handleFile = (selectedFile) => {
-    if (!selectedFile) return
+  function selectFiles(fileList) {
+    const accepted = []
+    const problems = []
 
-    reset()
-    const extension = selectedFile.name.split('.').pop().toLowerCase()
-
-    if (!supportedFormats.map((format) => format.toLowerCase()).includes(extension)) {
-      setError('Unsupported file format. Please upload PDF, DOCX, TXT, CSV, or XML.')
-      setFile(null)
-      return
+    for (const file of Array.from(fileList ?? [])) {
+      const problem = validate(file)
+      if (problem) problems.push(`${file.name}: ${problem}`)
+      else accepted.push(file)
     }
 
-    setError('')
-    setFile(selectedFile)
+    setRejected(problems)
+    if (accepted.length > 0) addFiles(accepted) // the queue starts by itself
   }
 
-  const formatSize = (bytes) => {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
-  }
+  const finishedCount = items.filter((i) =>
+      ['done', 'duplicate', 'error'].includes(i.status),
+  ).length
 
-  const removeFile = () => {
-    reset()
-    setFile(null)
-    setError('')
-    if (inputRef.current) inputRef.current.value = ''
-  }
+  const totalPages = Math.max(Math.ceil(items.length / PAGE_SIZE), 1)
+  const currentPage = Math.min(page, totalPages - 1) // safe if items were removed
+  const visibleItems = items.slice(
+      currentPage * PAGE_SIZE,
+      (currentPage + 1) * PAGE_SIZE,
+  )
+  const activeItem = items.find(
+      (item) => item.status === 'uploading' || item.status === 'processing',
+  )
+  const activeIsHidden = activeItem && !visibleItems.includes(activeItem)
 
   return (
-      <div className="min-h-screen space-y-8 bg-slate-50/50 p-4 sm:p-6 lg:p-8">
-        {/* Header */}
-        <section>
+      <section className="mx-auto max-w-3xl space-y-6">
+        <div>
           <Link
               to="/"
-              className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-indigo-600"
+              className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-emerald-600"
           >
             <ArrowLeft size={17} />
             Back to Dashboard
           </Link>
 
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
               <FileSearch size={30} />
             </div>
-
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Extract from Documents
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-                Upload a document to extract its text and prepare its content
-                for searching and analysis.
+              <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">
+                Select several documents. Their text is extracted one after another automatically.
               </p>
             </div>
           </div>
-        </section>
+        </div>
 
-        <section className="mx-auto w-full max-w-4xl">
-          <div
-              role="button"
-              tabIndex={0}
-              onClick={() => inputRef.current?.click()}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  inputRef.current?.click()
-                }
+        <div
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault()
+              selectFiles(event.dataTransfer.files)
+            }}
+            onClick={() => inputRef.current?.click()}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                inputRef.current?.click()
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Choose documents"
+            className="cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center transition hover:border-emerald-400 hover:bg-emerald-50/30"
+        >
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
+            <FileUp size={28} />
+          </div>
+          <h2 className="mt-4 text-lg font-semibold text-slate-900">
+            Choose documents
+          </h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Click to browse or drag and drop one or many files here.
+          </p>
+          <p className="mt-2 text-xs text-slate-400">
+            PDF, DOCX, TXT, CSV or XML · Maximum 50 MB each
+          </p>
+
+          <input
+              ref={inputRef}
+              type="file"
+              multiple
+              accept={ACCEPTED_TYPES.join(',')}
+              className="hidden"
+              onChange={(event) => {
+                selectFiles(event.target.files)
+                event.target.value = ''
               }}
-              className="cursor-pointer rounded-3xl border-2 border-dashed border-slate-300 bg-white px-5 py-12 text-center transition hover:border-emerald-400 hover:bg-emerald-50/30 sm:px-10 sm:py-16"
-          >
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
-              <FileUp size={48} strokeWidth={1.7} />
+          />
+        </div>
+
+        {rejected.length > 0 && (
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <p className="font-semibold">Some files were skipped:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {rejected.map((message) => (
+                    <li key={message} className="break-all">{message}</li>
+                ))}
+              </ul>
             </div>
+        )}
 
-            <h2 className="mt-7 text-xl font-bold text-slate-900 sm:text-2xl">
-              Upload your document
-            </h2>
-
-            <p className="mt-3 text-sm text-slate-500 sm:text-base">
-              Drag and drop your file here, or click to browse.
-            </p>
-
-            <p className="mt-3 text-xs font-medium text-slate-400 sm:text-sm">
-              Supported formats: PDF, DOCX, TXT, CSV, XML
-            </p>
-
-            <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  inputRef.current?.click()
-                }}
-                className="mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-            >
-              <Upload size={18} />
-              Choose File
-            </button>
-
-            <input
-                ref={inputRef}
-                type="file"
-                accept=".pdf,.docx,.txt,.csv,.xml"
-                className="hidden"
-                onChange={(event) => handleFile(event.target.files?.[0])}
-            />
-          </div>
-
-          {error && (
-              <p role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-                {error}
-              </p>
-          )}
-
-          {file && (
-              <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-emerald-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                    <FileText size={25} />
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900">
-                      {file.name}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {formatSize(file.size)} · Ready to process
-                    </p>
-                  </div>
-
-                  <CheckCircle2 className="shrink-0 text-emerald-600" size={21} />
+        {items.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-600">
+                  {finishedCount} / {items.length} finished
+                </p>
+                <div className="flex items-center gap-4">
+                  <Link
+                      to="/documents"
+                      className="text-sm font-medium text-slate-600 underline hover:text-emerald-700"
+                  >
+                    View documents
+                  </Link>
+                  <button
+                      type="button"
+                      onClick={clearFinished}
+                      disabled={finishedCount === 0}
+                      className="text-sm font-medium text-emerald-600 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Clear finished
+                  </button>
                 </div>
-
-                <button
-                    type="button"
-                    onClick={removeFile}
-                    disabled={isUploading}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <X size={16} />
-                  Remove
-                </button>
               </div>
-          )}
-        </section>
 
-        {uploadError && (
-            <p
-                role="alert"
-                className="mx-auto w-full max-w-4xl rounded-xl bg-red-50 p-4 text-sm text-red-700"
-            >
-              {uploadError}
-            </p>
-        )}
+              {activeIsHidden && (
+                  <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
+                    <Loader2 size={15} className="shrink-0 animate-spin" />
+                    <span className="truncate">
+                                Now {activeItem.status === 'uploading' ? 'uploading' : 'extracting'}:{' '}
+                      <strong>{activeItem.file.name}</strong>
+                            </span>
+                  </div>
+              )}
 
-        {result && (
-            <div
-                role="status"
-                className={`mx-auto flex w-full max-w-4xl flex-col gap-3 rounded-xl p-4 text-sm sm:flex-row sm:items-center sm:justify-between ${
-                    result.duplicate ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'
-                }`}
-            >
-          <span>
-            {result.duplicate
-                ? 'This document already exists in your library. Nothing was added.'
-                : `Text extracted successfully (${result.characters?.toLocaleString()} characters).`}
-          </span>
-              <Link to="/documents" className="font-semibold underline">
-                View documents
-              </Link>
+              <ul className="space-y-2" aria-live="polite">
+                {visibleItems.map((item) => {
+                  const status = STATUS[item.status]
+                  const StatusIcon = status.icon
+                  const canRemove = item.status !== 'uploading' && item.status !== 'processing'
+
+                  return (
+                      <li key={item.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                        <div className="flex items-center gap-3">
+                          <FileText size={20} className="shrink-0 text-emerald-600" />
+
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-slate-900">
+                              {item.file.name}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {formatSize(item.file.size)}
+                              {typeof item.result?.characters === 'number' &&
+                                  ` · ${item.result.characters.toLocaleString()} characters`}
+                            </p>
+                          </div>
+
+                          <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${status.style}`}>
+                                            <StatusIcon size={13} className={status.spin ? 'animate-spin' : ''} />
+                            {status.label}
+                                        </span>
+
+                          {item.status === 'error' && (
+                              <button
+                                  type="button"
+                                  onClick={() => retry(item.id)}
+                                  className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+                              >
+                                Retry
+                              </button>
+                          )}
+
+                          {canRemove && (
+                              <button
+                                  type="button"
+                                  onClick={() => removeItem(item.id)}
+                                  aria-label={`Remove ${item.file.name}`}
+                                  className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                              >
+                                <X size={16} />
+                              </button>
+                          )}
+                        </div>
+
+                        {item.status === 'uploading' && (
+                            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                              <div
+                                  className="h-full rounded-full bg-emerald-600 transition-all duration-300"
+                                  style={{ width: `${item.progress}%` }}
+                              />
+                            </div>
+                        )}
+
+                        {item.status === 'processing' && (
+                            <p className="mt-2 text-xs text-slate-500">
+                              Upload complete. Extracting text (OCR can take longer for scanned PDFs).
+                            </p>
+                        )}
+
+                        {item.status === 'error' && (
+                            <p className="mt-2 text-xs text-red-600">{item.error}</p>
+                        )}
+                      </li>
+                  )
+                })}
+              </ul>
+
+              <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+
+              {isBusy && (
+                  <p className="text-xs text-slate-400">
+                    Keep this page open until the queue finishes.
+                  </p>
+              )}
             </div>
         )}
-
-        {file && !result && (
-            <div className="mx-auto flex w-full max-w-4xl justify-end">
-              <button
-                  type="button"
-                  onClick={() => upload(file)}
-                  disabled={isUploading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isUploading ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Extracting...
-                    </>
-                ) : (
-                    <>
-                      Extract Content
-                      <ArrowRight size={18} />
-                    </>
-                )}
-              </button>
-            </div>
-        )}
-      </div>
+      </section>
   )
 }
