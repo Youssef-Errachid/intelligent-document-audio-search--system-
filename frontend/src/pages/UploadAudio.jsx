@@ -1,98 +1,79 @@
-
 import { useRef, useState } from 'react'
-import { AudioLines, CheckCircle2, FileAudio, Upload } from 'lucide-react'
-import useAudio from '../hooks/useAudio'
+import {
+    AlertCircle,
+    AudioLines,
+    CheckCircle2,
+    Clock3,
+    Copy,
+    FileAudio,
+    Loader2,
+    X,
+} from 'lucide-react'
+import Pagination from '../components/common/Pagination'
+import useUploadQueue from '../hooks/useUploadQueue'
+import { uploadAudio } from '../services/audioService'
 
 const ACCEPTED_TYPES = ['.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac', '.wma']
 const MAX_SIZE = 50 * 1024 * 1024
+const PAGE_SIZE = 5
+
+const STATUS = {
+    pending: { label: 'Waiting', icon: Clock3, style: 'bg-slate-100 text-slate-600' },
+    uploading: { label: 'Uploading', icon: Loader2, style: 'bg-indigo-50 text-indigo-700', spin: true },
+    processing: { label: 'Transcribing', icon: Loader2, style: 'bg-sky-50 text-sky-700', spin: true },
+    done: { label: 'Done', icon: CheckCircle2, style: 'bg-emerald-50 text-emerald-700' },
+    duplicate: { label: 'Already uploaded', icon: Copy, style: 'bg-amber-50 text-amber-700' },
+    error: { label: 'Failed', icon: AlertCircle, style: 'bg-red-50 text-red-700' },
+}
 
 function formatSize(bytes) {
-    if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`
-    }
-
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function validate(file) {
+    const extension = `.${file.name.split('.').pop().toLowerCase()}`
+    if (!ACCEPTED_TYPES.includes(extension)) return 'unsupported format'
+    if (file.size === 0) return 'empty file'
+    if (file.size > MAX_SIZE) return 'larger than 50 MB'
+    return null
 }
 
 export default function UploadAudio() {
     const inputRef = useRef(null)
+    const [rejected, setRejected] = useState([])
+    const [page, setPage] = useState(0)
+    const { items, isBusy, addFiles, removeItem, clearFinished, retry } =
+        useUploadQueue(uploadAudio)
 
-    const {
-        upload,
-        isUploading,
-        uploadProgress,
-        uploadPhase,
-        error,
-    } = useAudio()
+    function selectFiles(fileList) {
+        const accepted = []
+        const problems = []
 
-    const [file, setFile] = useState(null)
-    const [success, setSuccess] = useState(null)
-    const [localError, setLocalError] = useState(null)
-
-    function selectFile(selected) {
-        setSuccess(null)
-        setLocalError(null)
-
-        if (!selected) return
-
-        const extension = `.${selected.name.split('.').pop().toLowerCase()}`
-
-        if (!ACCEPTED_TYPES.includes(extension)) {
-            setFile(null)
-            setLocalError(
-                'Unsupported format. Choose WAV, MP3, M4A, FLAC, OGG, AAC or WMA.'
-            )
-            return
+        for (const file of Array.from(fileList ?? [])) {
+            const problem = validate(file)
+            if (problem) problems.push(`${file.name}: ${problem}`)
+            else accepted.push(file)
         }
 
-        if (selected.size === 0) {
-            setFile(null)
-            setLocalError('The selected file is empty.')
-            return
-        }
-
-        if (selected.size > MAX_SIZE) {
-            setFile(null)
-            setLocalError('The file exceeds the 50 MB limit.')
-            return
-        }
-
-        setFile(selected)
+        setRejected(problems)
+        if (accepted.length > 0) addFiles(accepted)
     }
 
-    async function handleSubmit(event) {
-        event.preventDefault()
+    const finishedCount = items.filter((i) =>
+        ['done', 'duplicate', 'error'].includes(i.status),
+    ).length
 
-        if (!file || isUploading) return
-
-        setSuccess(null)
-        setLocalError(null)
-
-        try {
-            const uploadedFile = file
-            const result = await upload(uploadedFile)
-
-            setSuccess({
-                name: result?.source_path || uploadedFile.name,
-                characters: result?.characters,
-                duplicate: result?.duplicate === true,
-                message:
-                    result?.duplicate === true
-                        ? 'This audio has already been uploaded.'
-                        : 'Audio uploaded and transcribed successfully.',
-            })
-
-            setFile(null)
-
-            if (inputRef.current) {
-                inputRef.current.value = ''
-            }
-        } catch {
-            // The useAudio hook exposes the API error.
-        }
-    }
-
-    const displayedError = localError || error
+    const totalPages = Math.max(Math.ceil(items.length / PAGE_SIZE), 1)
+    const currentPage = Math.min(page, totalPages - 1)
+    const visibleItems = items.slice(
+        currentPage * PAGE_SIZE,
+        (currentPage + 1) * PAGE_SIZE,
+    )
+    const activeItem = items.find(
+        (item) => item.status === 'uploading' || item.status === 'processing',
+    )
+    const activeIsHidden = activeItem && !visibleItems.includes(activeItem)
 
     return (
         <section className="mx-auto max-w-3xl space-y-6">
@@ -100,194 +81,176 @@ export default function UploadAudio() {
                 <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
                     Audio workspace
                 </p>
-
                 <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                     Upload audio
                 </h1>
-
                 <p className="mt-2 leading-7 text-slate-500">
-                    Upload an audio recording to extract its transcript and make it searchable.
+                    Select several recordings. They are transcribed one after another automatically.
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-                <div
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
+            <div
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                    event.preventDefault()
+                    selectFiles(event.dataTransfer.files)
+                }}
+                onClick={() => inputRef.current?.click()}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault()
-                        if (!isUploading) {
-                            selectFile(event.dataTransfer.files?.[0])
-                        }
+                        inputRef.current?.click()
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Choose audio files"
+                className="cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center transition hover:border-indigo-400 hover:bg-indigo-50/30"
+            >
+                <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                    <FileAudio size={28} />
+                </div>
+                <h2 className="mt-4 text-lg font-semibold text-slate-900">
+                    Choose audio files
+                </h2>
+                <p className="mt-2 text-sm text-slate-500">
+                    Click to browse or drag and drop one or many files here.
+                </p>
+                <p className="mt-2 text-xs text-slate-400">
+                    WAV, MP3, M4A, FLAC, OGG, AAC or WMA · Maximum 50 MB each
+                </p>
+
+                <input
+                    ref={inputRef}
+                    type="file"
+                    multiple
+                    accept={ACCEPTED_TYPES.join(',')}
+                    className="hidden"
+                    onChange={(event) => {
+                        selectFiles(event.target.files)
+                        event.target.value = ''
                     }}
-                    onClick={() => {
-                        if (!isUploading) inputRef.current?.click()
-                    }}
-                    onKeyDown={(event) => {
-                        if (
-                            !isUploading &&
-                            (event.key === 'Enter' || event.key === ' ')
-                        ) {
-                            event.preventDefault()
-                            inputRef.current?.click()
-                        }
-                    }}
-                    role="button"
-                    tabIndex={isUploading ? -1 : 0}
-                    aria-label="Choose an audio file"
-                    aria-disabled={isUploading}
-                    className={`rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center transition ${
-                        isUploading
-                            ? 'cursor-not-allowed opacity-60'
-                            : 'cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30'
-                    }`}
-                >
-                    <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                        <FileAudio size={28} />
+                />
+            </div>
+
+            {rejected.length > 0 && (
+                <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <p className="font-semibold">Some files were skipped:</p>
+                    <ul className="mt-1 list-disc pl-5">
+                        {rejected.map((message) => (
+                            <li key={message} className="break-all">{message}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {items.length > 0 && (
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-600">
+                            {finishedCount} / {items.length} finished
+                        </p>
+                        <button
+                            type="button"
+                            onClick={clearFinished}
+                            disabled={finishedCount === 0}
+                            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            Clear finished
+                        </button>
                     </div>
 
-                    <h2 className="mt-4 break-all text-lg font-semibold text-slate-900">
-                        {file ? file.name : 'Choose an audio file'}
-                    </h2>
-
-                    <p className="mt-2 text-sm text-slate-500">
-                        Click to browse or drag and drop a file here.
-                    </p>
-
-                    <p className="mt-2 text-xs text-slate-400">
-                        WAV, MP3, M4A, FLAC, OGG, AAC or WMA · Maximum 50 MB
-                    </p>
-
-                    {file && (
-                        <p className="mt-3 text-sm font-medium text-indigo-600">
-                            {formatSize(file.size)}
-                        </p>
+                    {activeIsHidden && (
+                        <div className="flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-2.5 text-sm text-indigo-700">
+                            <Loader2 size={15} className="shrink-0 animate-spin" />
+                            <span className="truncate">
+                                Now {activeItem.status === 'uploading' ? 'uploading' : 'transcribing'}:{' '}
+                                <strong>{activeItem.file.name}</strong>
+                            </span>
+                        </div>
                     )}
 
-                    <input
-                        ref={inputRef}
-                        type="file"
-                        accept={ACCEPTED_TYPES.join(',')}
-                        className="hidden"
-                        disabled={isUploading}
-                        onChange={(event) => {
-                            selectFile(event.target.files?.[0])
-                            event.target.value = ''
-                        }}
-                    />
+                    <ul className="space-y-2" aria-live="polite">
+                        {visibleItems.map((item) => {
+                            const status = STATUS[item.status]
+                            const StatusIcon = status.icon
+                            const canRemove = item.status !== 'uploading' && item.status !== 'processing'
+
+                            return (
+                                <li key={item.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                                    <div className="flex items-center gap-3">
+                                        <AudioLines size={20} className="shrink-0 text-sky-600" />
+
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold text-slate-900">
+                                                {item.file.name}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {formatSize(item.file.size)}
+                                                {typeof item.result?.characters === 'number' &&
+                                                    ` · ${item.result.characters.toLocaleString()} characters`}
+                                            </p>
+                                        </div>
+
+                                        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ${status.style}`}>
+                                            <StatusIcon size={13} className={status.spin ? 'animate-spin' : ''} />
+                                            {status.label}
+                                        </span>
+
+                                        {item.status === 'error' && (
+                                            <button
+                                                type="button"
+                                                onClick={() => retry(item.id)}
+                                                className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                                            >
+                                                Retry
+                                            </button>
+                                        )}
+
+                                        {canRemove && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeItem(item.id)}
+                                                aria-label={`Remove ${item.file.name}`}
+                                                className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {item.status === 'uploading' && (
+                                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                                            <div
+                                                className="h-full rounded-full bg-indigo-600 transition-all duration-300"
+                                                style={{ width: `${item.progress}%` }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {item.status === 'processing' && (
+                                        <p className="mt-2 text-xs text-slate-500">
+                                            Upload complete. Transcription may take several minutes.
+                                        </p>
+                                    )}
+
+                                    {item.status === 'error' && (
+                                        <p className="mt-2 text-xs text-red-600">{item.error}</p>
+                                    )}
+                                </li>
+                            )
+                        })}
+                    </ul>
+
+                    <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+
+                    {isBusy && (
+                        <p className="text-xs text-slate-400">
+                            Keep this page open until the queue finishes.
+                        </p>
+                    )}
                 </div>
-
-                {displayedError && (
-                    <div
-                        role="alert"
-                        className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                    >
-                        {typeof displayedError === 'string'
-                            ? displayedError
-                            : 'An error occurred while processing the audio. Please try again.'}
-                    </div>
-                )}
-
-                {success && (
-                    <div
-                        role="status"
-                        className={`flex items-start gap-3 rounded-xl border p-4 text-sm ${
-                            success.duplicate
-                                ? 'border-amber-200 bg-amber-50 text-amber-800'
-                                : 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                        }`}
-                    >
-                        <CheckCircle2
-                            size={20}
-                            className="mt-0.5 shrink-0"
-                        />
-
-                        <div className="min-w-0">
-                            <p className="font-semibold">
-                                {success.message}
-                            </p>
-
-                            <p className="mt-1 break-all">
-                                {success.name}
-                            </p>
-
-                            {typeof success.characters === 'number' && (
-                                <p className="mt-1">
-                                    {success.characters.toLocaleString()} transcript characters
-                                </p>
-                            )}
-
-                            {success.duplicate && (
-                                <p className="mt-1">
-                                    This file was already processed, so it was not transcribed again.
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {isUploading && (
-                    <div
-                        className="space-y-2 rounded-xl border border-indigo-100 bg-white p-4"
-                        role="status"
-                        aria-live="polite"
-                    >
-                        <div className="flex flex-wrap justify-between gap-2 text-sm text-slate-600">
-                            <span>
-                                {uploadPhase === 'transcribing'
-                                    ? 'Upload complete — transcribing audio...'
-                                    : 'Uploading audio...'}
-                            </span>
-
-                            <span className="font-semibold tabular-nums">
-                                {uploadProgress}%
-                            </span>
-                        </div>
-
-                        <div
-                            className="h-2 overflow-hidden rounded-full bg-slate-100"
-                            role="progressbar"
-                            aria-label="Audio upload progress"
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                            aria-valuenow={uploadProgress}
-                        >
-                            <div
-                                className="h-full rounded-full bg-indigo-600 transition-all duration-300"
-                                style={{
-                                    width: `${Math.min(100, Math.max(0, uploadProgress))}%`,
-                                }}
-                            />
-                        </div>
-
-                        {uploadPhase === 'transcribing' && (
-                            <p className="text-xs text-slate-500">
-                                Transcription may take several minutes for large audio files.
-                            </p>
-                        )}
-                    </div>
-                )}
-
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <AudioLines size={18} />
-                        <span>Transcription runs on the backend.</span>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={!file || isUploading}
-                        className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        <Upload size={18} />
-
-                        {isUploading
-                            ? uploadPhase === 'transcribing'
-                                ? 'Transcribing audio...'
-                                : 'Uploading audio...'
-                            : 'Upload and transcribe'}
-                    </button>
-                </div>
-            </form>
+            )}
         </section>
     )
 }
