@@ -9,11 +9,13 @@ import {
     Loader2,
     X,
 } from 'lucide-react'
+import Pagination from '../components/common/Pagination'
 import useUploadQueue from '../hooks/useUploadQueue'
 import { uploadAudio } from '../services/audioService'
 
 const ACCEPTED_TYPES = ['.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac', '.wma']
 const MAX_SIZE = 50 * 1024 * 1024
+const PAGE_SIZE = 5
 
 const STATUS = {
     pending: { label: 'Waiting', icon: Clock3, style: 'bg-slate-100 text-slate-600' },
@@ -40,6 +42,7 @@ function validate(file) {
 export default function UploadAudio() {
     const inputRef = useRef(null)
     const [rejected, setRejected] = useState([])
+    const [page, setPage] = useState(0)
     const { items, isBusy, addFiles, removeItem, clearFinished, retry } =
         useUploadQueue(uploadAudio)
 
@@ -54,12 +57,23 @@ export default function UploadAudio() {
         }
 
         setRejected(problems)
-        if (accepted.length > 0) addFiles(accepted) // the queue starts by itself
+        if (accepted.length > 0) addFiles(accepted)
     }
 
     const finishedCount = items.filter((i) =>
         ['done', 'duplicate', 'error'].includes(i.status),
     ).length
+
+    const totalPages = Math.max(Math.ceil(items.length / PAGE_SIZE), 1)
+    const currentPage = Math.min(page, totalPages - 1)
+    const visibleItems = items.slice(
+        currentPage * PAGE_SIZE,
+        (currentPage + 1) * PAGE_SIZE,
+    )
+    const activeItem = items.find(
+        (item) => item.status === 'uploading' || item.status === 'processing',
+    )
+    const activeIsHidden = activeItem && !visibleItems.includes(activeItem)
 
     return (
         <section className="mx-auto max-w-3xl space-y-6">
@@ -114,7 +128,7 @@ export default function UploadAudio() {
                     className="hidden"
                     onChange={(event) => {
                         selectFiles(event.target.files)
-                        event.target.value = '' // allow selecting the same file again
+                        event.target.value = ''
                     }}
                 />
             </div>
@@ -146,8 +160,18 @@ export default function UploadAudio() {
                         </button>
                     </div>
 
+                    {activeIsHidden && (
+                        <div className="flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-2.5 text-sm text-indigo-700">
+                            <Loader2 size={15} className="shrink-0 animate-spin" />
+                            <span className="truncate">
+                                Now {activeItem.status === 'uploading' ? 'uploading' : 'transcribing'}:{' '}
+                                <strong>{activeItem.file.name}</strong>
+                            </span>
+                        </div>
+                    )}
+
                     <ul className="space-y-2" aria-live="polite">
-                        {items.map((item) => {
+                        {visibleItems.map((item) => {
                             const status = STATUS[item.status]
                             const StatusIcon = status.icon
                             const canRemove = item.status !== 'uploading' && item.status !== 'processing'
@@ -217,6 +241,8 @@ export default function UploadAudio() {
                             )
                         })}
                     </ul>
+
+                    <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
 
                     {isBusy && (
                         <p className="text-xs text-slate-400">
