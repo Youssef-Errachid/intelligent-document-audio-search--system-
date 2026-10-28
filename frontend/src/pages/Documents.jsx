@@ -46,7 +46,7 @@ export default function Documents() {
             </p>
           </div>
           <Link
-              to="/audio/upload"
+              to="/upload/documents"
               className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
           >
             <Upload size={16} aria-hidden="true" />
