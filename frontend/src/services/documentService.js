@@ -13,13 +13,20 @@ export async function listDocuments({
     return data
 }
 
-export async function uploadDocument(file, { signal } = {}) {
+export async function uploadDocument(file, { signal, onUploadProgress } = {}) {
     const formData = new FormData()
     formData.append('file', file)
 
     const { data } = await api.post('/documents', formData, {
         signal,
         timeout: 120000,
+        onUploadProgress: (event) => {
+            if (event.total) {
+                onUploadProgress?.(
+                    Math.round((event.loaded / event.total) * 100),
+                )
+            }
+        },
     })
     return data
 }
