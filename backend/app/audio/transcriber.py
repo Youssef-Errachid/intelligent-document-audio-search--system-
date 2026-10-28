@@ -1,14 +1,17 @@
 from functools import lru_cache
 from faster_whisper import WhisperModel
 
+from app.config import settings
+
 
 @lru_cache(maxsize=1)
 def get_model():
     return WhisperModel(
-        "base",
+        settings.whisper_model_path,
         device="cpu",
         compute_type="int8",
         cpu_threads=4,
+        local_files_only=True,
     )
 
 
