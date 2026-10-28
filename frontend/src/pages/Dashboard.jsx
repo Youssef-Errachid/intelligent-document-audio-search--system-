@@ -30,7 +30,7 @@ const actions = [
     title: 'Extract Audio',
     description: 'Transcribe audio files and extract useful information.',
     icon: AudioLinesIcon,
-    path: '/upload/audio',
+    path: '/audio/upload',
   },
 ]
 
