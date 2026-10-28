@@ -1,58 +1,47 @@
-
-from pathlib import Path
-import time
-
-import whisper
-
-from app.audio.loader import validate_audio_file
-
-_model = None
+from functools import lru_cache
+from faster_whisper import WhisperModel
 
 
+@lru_cache(maxsize=1)
 def get_model():
-    """Load the Whisper base model once per Python process."""
-    global _model
-
-    if _model is None:
-        print("[Whisper] Loading base model...", flush=True)
-        _model = whisper.load_model("base")
-        print("[Whisper] Model loaded.", flush=True)
-
-    return _model
-
-
-def transcribe_audio(file_path: str | Path) -> dict:
-    """Transcribe audio and return text, language and segments."""
-    path = validate_audio_file(file_path)
-
-    print(f"[Whisper] Starting: {path.name}", flush=True)
-    start_time = time.time()
-
-    result = get_model().transcribe(
-        str(path),
-        fp16=False,
-        verbose=False,
+    return WhisperModel(
+        "base",
+        device="cpu",
+        compute_type="int8",
+        cpu_threads=4,
     )
 
-    print(
-        f"[Whisper] Finished in {time.time() - start_time:.1f}s",
-        flush=True,
+
+def transcribe_audio(audio_path):
+    model = get_model()
+
+    segments, info = model.transcribe(
+        str(audio_path),
+        beam_size=1,
+        vad_filter=False,
     )
 
-    segments = [
-        {
-            "text": segment["text"].strip(),
-            "start": float(segment["start"]),
-            "end": float(segment["end"]),
-        }
-        for segment in result.get("segments", [])
-    ]
+    transcript_segments = []
+    text_parts = []
+
+    for segment in segments:
+        segment_text = segment.text.strip()
+
+        if segment_text:
+            text_parts.append(segment_text)
+            transcript_segments.append({
+                "start": segment.start,
+                "end": segment.end,
+                "text": segment_text,
+            })
+
+    text = " ".join(text_parts).strip()
+
+    if not text:
+        raise ValueError("No speech detected in the audio file.")
 
     return {
-        "source_path": str(path),
-        "type": "audio",
-        "text": result.get("text", "").strip(),
-        "language": result.get("language"),
-        "segments": segments,
-        "status": "extrait",
+        "text": text,
+        "language": info.language,
+        "segments": transcript_segments,
     }

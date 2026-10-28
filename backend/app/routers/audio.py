@@ -2,7 +2,7 @@ import os
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-
+import logging
 from fastapi import APIRouter, File, HTTPException, Response, UploadFile
 from starlette.concurrency import run_in_threadpool
 
@@ -11,6 +11,7 @@ from app.database import database
 from app.schemas import UploadResponse
 from app.services.hash_service import sha256_bytes, sha256_text
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/audio", tags=["audio"])
 
 ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".aac", ".wma"}
@@ -49,6 +50,7 @@ async def upload_audio(response: Response, file: UploadFile = File(...)):
             characters=len(existing.get("text", "")),
         )
 
+    
     temp_path = None
     try:
         with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as temp_file:
@@ -58,13 +60,16 @@ async def upload_audio(response: Response, file: UploadFile = File(...)):
         extracted = await run_in_threadpool(transcribe_audio, temp_path)
 
     except Exception as exc:
+        logger.exception("Audio transcription failed: %s", exc)
         raise HTTPException(
             status_code=422,
-            detail="Audio transcription failed. Check that the file contains valid audio.",
+            detail="Audio transcription failed. Check the backend logs.",
         ) from exc
+
     finally:
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
+
 
     text = extracted["text"]
     if not text:
@@ -90,10 +95,13 @@ async def upload_audio(response: Response, file: UploadFile = File(...)):
     }
 
     result = await collection.insert_one(document)
+
     return UploadResponse(
         id=str(result.inserted_id),
         source_path=filename,
         type="audio",
         status="extrait",
+        duplicate=False,
         characters=len(text),
     )
+

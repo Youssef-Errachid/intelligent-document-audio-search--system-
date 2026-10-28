@@ -11,15 +11,7 @@ export default function Sidebar({ isOpen, onClose }) {
       }`}
     >
       <div className="flex h-20 items-center justify-between border-b border-slate-100 px-6">
-        <NavLink to="/" className="flex items-center gap-3" onClick={onClose}>
-          <span className="flex size-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-200">
-            <BrainCircuit size={22} strokeWidth={2.25} aria-hidden="true" />
-          </span>
-          <span className="text-lg font-bold tracking-tight text-slate-900">
-            DocuMind <span className="text-indigo-600">AI</span>
-          </span>
-        </NavLink>
-        <button
+          <button
           type="button"
           onClick={onClose}
           aria-label="Close navigation menu"
