@@ -16,7 +16,10 @@ from app.services.hash_service import sha256_bytes, sha256_text
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/audio", tags=["audio"])
 
-ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".aac", ".wma"}
+ALLOWED_EXTENSIONS = {
+    ".wav", ".mp3", ".m4a", ".flac", ".ogg", ".aac", ".wma",
+    ".mp4", ".mpeg", ".mpga", ".opus", ".webm",
+}
 MAX_FILE_SIZE = 50 * 1024 * 1024
 
 

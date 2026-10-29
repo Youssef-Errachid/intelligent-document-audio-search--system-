@@ -13,7 +13,10 @@ import Pagination from '../components/common/Pagination'
 import useUploadQueue from '../hooks/useUploadQueue'
 import { uploadAudio } from '../services/audioService'
 
-const ACCEPTED_TYPES = ['.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac', '.wma']
+const ACCEPTED_TYPES = [
+    '.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac', '.wma',
+    '.mp4', '.mpeg', '.mpga', '.opus', '.webm',
+]
 const MAX_SIZE = 50 * 1024 * 1024
 const PAGE_SIZE = 5
 
