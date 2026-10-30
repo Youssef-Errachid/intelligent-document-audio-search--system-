@@ -4,7 +4,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, Response, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 from starlette.concurrency import run_in_threadpool
 
 from app.audio.fingerprint import AudioDecodeError, calculate_decoded_audio_hash
@@ -35,7 +35,11 @@ def duplicate_response(doc: dict) -> UploadResponse:
 
 
 @router.post("/upload", response_model=UploadResponse, status_code=201)
-async def upload_audio(response: Response, file: UploadFile = File(...)):
+async def upload_audio(
+    response: Response,
+    file: UploadFile = File(...),
+    vad: bool = Form(False),
+):
     filename = Path(file.filename or "").name
     extension = Path(filename).suffix.lower()
 
@@ -78,7 +82,7 @@ async def upload_audio(response: Response, file: UploadFile = File(...)):
             response.status_code = 200
             return duplicate_response(existing)
 
-        extracted = await run_in_threadpool(transcribe_audio, temp_path)
+        extracted = await run_in_threadpool(transcribe_audio, temp_path, vad)
 
     except HTTPException:
         raise
@@ -109,6 +113,7 @@ async def upload_audio(response: Response, file: UploadFile = File(...)):
             "size_bytes": len(content),
             "mime_type": file.content_type,
             "origin": "upload",
+            "vad": vad,
         },
         "status": "extrait",
         "created_at": datetime.now(timezone.utc),
