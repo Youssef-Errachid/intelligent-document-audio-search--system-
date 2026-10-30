@@ -15,13 +15,13 @@ def get_model():
     )
 
 
-def transcribe_audio(audio_path):
+def transcribe_audio(audio_path, vad: bool = False):
     model = get_model()
 
     segments, info = model.transcribe(
         str(audio_path),
         beam_size=1,
-        vad_filter=False,
+        vad_filter=vad,
     )
 
     transcript_segments = []

@@ -46,6 +46,7 @@ export default function UploadAudio() {
     const inputRef = useRef(null)
     const [rejected, setRejected] = useState([])
     const [page, setPage] = useState(0)
+    const [vad, setVad] = useState(false)
     const { items, isBusy, addFiles, removeItem, clearFinished, retry } =
         useUploadQueue(uploadAudio)
 
@@ -60,7 +61,7 @@ export default function UploadAudio() {
         }
 
         setRejected(problems)
-        if (accepted.length > 0) addFiles(accepted)
+        if (accepted.length > 0) addFiles(accepted, { vad })
     }
 
     const finishedCount = items.filter((i) =>
@@ -92,6 +93,24 @@ export default function UploadAudio() {
                 </p>
             </div>
 
+            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <input
+                    type="checkbox"
+                    checked={vad}
+                    onChange={(event) => setVad(event.target.checked)}
+                    className="mt-1 size-4 accent-indigo-600"
+                />
+                <span>
+        <span className="block text-sm font-semibold text-slate-900">
+            Skip silence (VAD)
+        </span>
+        <span className="block text-sm text-slate-500">
+            Removes silent parts before transcribing. Faster on recordings with
+            long pauses, but very quiet speech may be missed. Applies to files
+            you add after changing it.
+        </span>
+    </span>
+            </label>
             <div
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={(event) => {

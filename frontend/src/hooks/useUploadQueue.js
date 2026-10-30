@@ -13,10 +13,11 @@ export default function useUploadQueue(uploadFn) {
         )
     }, [])
 
-    const addFiles = useCallback((files) => {
+    const addFiles = useCallback((files, options = {}) => {
         const newItems = Array.from(files).map((file) => ({
             id: ++nextId,
             file,
+            options,
             status: 'pending',
             progress: 0,
             result: null,
@@ -62,6 +63,7 @@ export default function useUploadQueue(uploadFn) {
         const run = async () => {
             try {
                 const result = await uploadFn(next.file, {
+                    ...next.options,
                     onUploadProgress: (percent) =>
                         updateItem(next.id, {
                             progress: percent,
