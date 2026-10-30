@@ -18,6 +18,7 @@ export async function uploadAudio(
 ) {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('vad', String(vad))
 
     const { data } = await api.post('/audio/upload', formData, {
         signal,
