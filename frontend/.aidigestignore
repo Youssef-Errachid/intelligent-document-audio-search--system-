@@ -1,0 +1,9 @@
+README.md
+eslint.config.js
+src/components/icons/
+public/
+*.png
+*.jpg
+*.svg
+.env
+.env.*

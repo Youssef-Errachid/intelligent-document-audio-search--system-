@@ -1,0 +1,23 @@
+# Models and anything heavy / not source code
+models/
+*.bin
+*.onnx
+*.pt
+*.pth
+*.safetensors
+*.gguf
+
+# Data and uploads
+data/
+uploads/
+storage/
+chroma_db/
+*.mp3
+*.wav
+*.m4a
+*.pdf
+*.docx
+
+# Secrets
+.env
+.env.*
