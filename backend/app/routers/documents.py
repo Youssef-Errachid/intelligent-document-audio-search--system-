@@ -6,8 +6,8 @@ from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile
 
 from app.database import database
 from app.schemas import DocumentListResponse, DocumentSummary, UploadResponse
-from app.services.hash_service import sha256_bytes, sha256_text
-from app.services.tika_service import TikaError, extract_text
+from app.extraction.hash_service import sha256_bytes, sha256_text
+from app.extraction.documents.tika_service import TikaError, extract_text
 
 router = APIRouter(tags=["documents"])
 
