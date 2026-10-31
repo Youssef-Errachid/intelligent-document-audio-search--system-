@@ -7,11 +7,11 @@ from pathlib import Path
 from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from app.audio.fingerprint import AudioDecodeError, calculate_decoded_audio_hash
-from app.audio.transcriber import transcribe_audio
+from app.extraction.audio.fingerprint import AudioDecodeError, calculate_decoded_audio_hash
+from app.extraction.audio.transcriber import transcribe_audio
 from app.database import database
 from app.schemas import UploadResponse
-from app.services.hash_service import sha256_bytes, sha256_text
+from app.extraction.hash_service import sha256_bytes, sha256_text
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/audio", tags=["audio"])
