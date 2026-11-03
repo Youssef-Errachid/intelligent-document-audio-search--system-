@@ -12,6 +12,7 @@ from app.extraction.audio.transcriber import transcribe_audio
 from app.database import database
 from app.schemas import UploadResponse
 from app.extraction.hash_service import sha256_bytes, sha256_text
+from app.indexation.indexer import try_index_document
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/audio", tags=["audio"])
@@ -120,12 +121,13 @@ async def upload_audio(
     }
 
     result = await collection.insert_one(document)
+    status = await try_index_document(document)
 
     return UploadResponse(
         id=str(result.inserted_id),
         source_path=filename,
         type="audio",
-        status="extrait",
+        status=status,
         duplicate=False,
         characters=len(text),
     )
