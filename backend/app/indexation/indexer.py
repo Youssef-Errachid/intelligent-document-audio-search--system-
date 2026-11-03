@@ -1,9 +1,11 @@
+import logging
 from datetime import datetime, timezone
 
 from app.database import database
 from app.indexation.chunker import chunk_document
 from app.indexation.solr_service import add_documents, commit_changes, delete_by_doc_id
 
+logger = logging.getLogger(__name__)
 
 def build_solr_docs(doc: dict) -> list[dict]:
     """Turn one MongoDB document into the list of Solr documents (one per chunk)."""
@@ -52,3 +54,15 @@ async def index_all() -> tuple[int, int]:
 
     await commit_changes()
     return documents, chunks
+
+async def try_index_document(doc: dict) -> str:
+    """Index a freshly uploaded document without ever failing the upload.
+
+    Returns the document status: "indexe" on success, the old status otherwise.
+    """
+    try:
+        await index_document(doc)
+        return "indexe"
+    except Exception:
+        logger.exception("Indexing failed for document %s", doc.get("_id"))
+        return doc.get("status", "extrait")

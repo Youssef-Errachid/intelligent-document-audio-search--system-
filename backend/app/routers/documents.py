@@ -8,6 +8,7 @@ from app.database import database
 from app.schemas import DocumentListResponse, DocumentSummary, UploadResponse
 from app.extraction.hash_service import sha256_bytes, sha256_text
 from app.extraction.documents.tika_service import TikaError, extract_text
+from app.indexation.indexer import try_index_document
 
 router = APIRouter(tags=["documents"])
 
@@ -128,11 +129,12 @@ async def upload_document(response: Response, file: UploadFile = File(...)):
         "created_at": datetime.now(timezone.utc),
     }
     result = await collection.insert_one(document)
+    status = await try_index_document(document)
 
     return UploadResponse(
         id=str(result.inserted_id),
         source_path=filename,
         type=extension,
-        status="extrait",
+        status=status,
         characters=len(text),
     )
