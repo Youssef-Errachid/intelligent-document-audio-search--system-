@@ -77,3 +77,24 @@ async def delete_by_doc_id(doc_id: str, commit: bool = False) -> None:
 
 async def commit_changes() -> None:
     await _post_update({"commit": {}}, commit=False)
+
+async def search_chunks(query: str, limit: int = 10) -> list[dict]:
+    """BM25 search on chunk content, keeping only the best chunk of each document."""
+    params = {
+        "q": query,
+        "defType": "edismax",
+        "qf": "content",
+        "fq": "{!collapse field=doc_id}",
+        "fl": "doc_id,source_path,doc_type,chunk_index,start_time,end_time,content,score",
+        "rows": limit,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(f"{settings.solr_url}/select", params=params)
+    except httpx.HTTPError as exc:
+        raise SolrError("Solr is unreachable") from exc
+
+    if response.status_code != 200:
+        raise SolrError(f"Solr returned {response.status_code}: {response.text[:300]}")
+
+    return response.json()["response"]["docs"]

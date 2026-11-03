@@ -8,6 +8,7 @@ class SearchResult(BaseModel):
     snippet: str
     start: float | None = None
     end: float | None = None
+    score: float | None = None
 
 
 class SearchResponse(BaseModel):
