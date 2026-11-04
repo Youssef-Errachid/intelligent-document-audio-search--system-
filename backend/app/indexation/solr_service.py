@@ -30,7 +30,6 @@ FIELDS = [
 ]
 
 
-
 class SolrError(Exception):
     """Raised when Solr is unreachable or rejects a request."""
 
@@ -61,7 +60,6 @@ async def ensure_schema() -> dict:
             existing = {item["name"]: item for item in response.json()["fields"]}
 
             missing = [
-
                 {**field, "indexed": True, "stored": True, "multiValued": False}
                 for field in FIELDS
                 if field["name"] not in existing
@@ -94,7 +92,6 @@ async def _post_update(payload, commit: bool) -> None:
             response = await client.post(
                 f"{settings.solr_url}/update", params=params, json=payload
             )
-
     except httpx.HTTPError as exc:
         raise SolrError("Solr is unreachable") from exc
 
@@ -109,6 +106,10 @@ async def add_documents(docs: list[dict], commit: bool = False) -> None:
 
 async def delete_by_doc_id(doc_id: str, commit: bool = False) -> None:
     await _post_update({"delete": {"query": f'doc_id:"{doc_id}"'}}, commit)
+
+
+async def delete_all(commit: bool = False) -> None:
+    await _post_update({"delete": {"query": "*:*"}}, commit)
 
 
 async def commit_changes() -> None:
@@ -127,7 +128,6 @@ async def search_chunks(query: str, limit: int = 10) -> list[dict]:
     }
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-
             response = await client.get(f"{settings.solr_url}/select", params=params)
     except httpx.HTTPError as exc:
         raise SolrError("Solr is unreachable") from exc
