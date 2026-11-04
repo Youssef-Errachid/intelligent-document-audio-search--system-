@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from app.database import database
 from app.indexation.chunker import chunk_document
+from app.indexation.embedding_service import embed
 from app.indexation.solr_service import (
     add_documents,
     commit_changes,
@@ -13,6 +14,8 @@ from app.indexation.solr_service import (
 logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 200
+
+EMBED_BATCH_SIZE = 16
 
 
 def build_solr_docs(doc: dict) -> list[dict]:
@@ -25,14 +28,23 @@ def build_solr_docs(doc: dict) -> list[dict]:
             "id": f"{doc_id}_{chunk['chunk_index']}",
             "doc_id": doc_id,
             "source_path": doc.get("source_path"),
+
             "doc_type": doc.get("type"),
             "language": doc.get("language"),
             **chunk,
         }
-
         solr_docs.append({key: value for key, value in solr_doc.items() if value is not None})
 
     return solr_docs
+
+
+async def attach_vectors(solr_docs: list[dict]) -> None:
+    """Add a "vector" field to every Solr document, computed from its content."""
+    for start in range(0, len(solr_docs), EMBED_BATCH_SIZE):
+        batch = solr_docs[start:start + EMBED_BATCH_SIZE]
+        vectors = await embed([solr_doc["content"] for solr_doc in batch])
+        for solr_doc, vector in zip(batch, vectors):
+            solr_doc["vector"] = vector
 
 
 async def index_document(doc: dict, commit: bool = True) -> int:
@@ -40,11 +52,14 @@ async def index_document(doc: dict, commit: bool = True) -> int:
     doc_id = str(doc["_id"])
     solr_docs = build_solr_docs(doc)
 
+    await attach_vectors(solr_docs)
+
     await delete_by_doc_id(doc_id)
     await add_documents(solr_docs, commit=commit)
 
     await database["documents"].update_one(
         {"_id": doc["_id"]},
+
         {"$set": {"status": "indexe", "indexed_at": datetime.now(timezone.utc)}},
     )
     return len(solr_docs)
@@ -57,15 +72,18 @@ async def index_all() -> tuple[int, int]:
     Mixing a delete-by-query with uncommitted adds for every document is very
     slow in Solr (measured: about 4 minutes for 28 documents).
     """
+    await embed(["health check"])
+
     await delete_all(commit=True)
 
     doc_ids = []
     batch = []
-
     chunks = 0
 
     async for doc in database["documents"].find({}):
         solr_docs = build_solr_docs(doc)
+        await attach_vectors(solr_docs)
+
         batch.extend(solr_docs)
         chunks += len(solr_docs)
         doc_ids.append(doc["_id"])
@@ -73,6 +91,7 @@ async def index_all() -> tuple[int, int]:
         if len(batch) >= BATCH_SIZE:
             await add_documents(batch)
             batch = []
+
 
     await add_documents(batch)
     await commit_changes()
@@ -94,5 +113,4 @@ async def try_index_document(doc: dict) -> str:
         return "indexe"
     except Exception:
         logger.exception("Indexing failed for document %s", doc.get("_id"))
-
         return doc.get("status", "extrait")
