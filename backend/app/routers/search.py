@@ -1,5 +1,5 @@
 import logging
-import re
+import unicodedata
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
@@ -20,17 +20,26 @@ def as_text(value) -> str:
     return value or ""
 
 
+def fold(text: str) -> str:
+    """Lowercase and remove accents, keeping exactly one character per input character.
+
+    "Requêtes" -> "requetes". Same length as the input, so positions stay valid.
+    """
+    return "".join(unicodedata.normalize("NFD", char.lower())[0] for char in text)
+
+
 def make_snippet(text: str, query: str) -> str:
-    """Cut a short piece of text around the first query word found."""
+    """Cut a short piece of text around the first query word found (accents ignored)."""
+
+    folded_text = fold(text)
     positions = []
     for word in query.split():
-        match = re.search(re.escape(word), text, re.IGNORECASE)
-        if match:
-            positions.append(match.start())
+        position = folded_text.find(fold(word))
+        if position != -1:
+            positions.append(position)
 
     center = min(positions) if positions else 0
     start = max(center - SNIPPET_SIZE, 0)
-
     end = min(center + SNIPPET_SIZE * 2, len(text))
     prefix = "..." if start > 0 else ""
     suffix = "..." if end < len(text) else ""
@@ -54,6 +63,7 @@ async def search(
 
     results = []
     for chunk in chunks:
+
         content = as_text(chunk.get("content"))
         results.append(
             SearchResult(
@@ -63,7 +73,6 @@ async def search(
                 snippet=make_snippet(content, q),
                 start=chunk.get("start_time"),
                 end=chunk.get("end_time"),
-
                 score=chunk.get("score"),
             )
         )
