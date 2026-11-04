@@ -10,5 +10,14 @@ services:
       - solr_data:/var/solr
     command: solr-precreate documents
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: search-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
 volumes:
   solr_data:
+  ollama_data:
