@@ -6,7 +6,7 @@ VECTOR_TYPE = f"knn_vector_{settings.embedding_dimension}"
 
 FIELD_TYPES = [
     {
-        "name": "text_folded",
+        "name": "text_fr_en",
         "class": "solr.TextField",
         "positionIncrementGap": "100",
         "analyzer": {
@@ -14,7 +14,19 @@ FIELD_TYPES = [
             "filters": [
                 {"class": "solr.ElisionFilterFactory", "ignoreCase": "true"},
                 {"class": "solr.LowerCaseFilterFactory"},
+                {
+                    "class": "solr.StopFilterFactory",
+                    "ignoreCase": "true",
+                    "words": "lang/stopwords_fr.txt",
+                    "format": "snowball",
+                },
+                {
+                    "class": "solr.StopFilterFactory",
+                    "ignoreCase": "true",
+                    "words": "lang/stopwords_en.txt",
+                },
                 {"class": "solr.ASCIIFoldingFilterFactory", "preserveOriginal": "false"},
+
             ],
         },
     },
@@ -26,7 +38,6 @@ FIELD_TYPES = [
     },
 ]
 
-
 FIELD_DEFAULTS = {"indexed": True, "stored": True, "multiValued": False}
 
 FIELDS = [
@@ -37,13 +48,14 @@ FIELDS = [
     {"name": "chunk_index", "type": "pint"},
     {"name": "start_time", "type": "pfloat"},
     {"name": "end_time", "type": "pfloat"},
-    {"name": "content", "type": "text_folded"},
+    {"name": "content", "type": "text_fr_en"},
     {"name": "vector", "type": VECTOR_TYPE, "stored": False},
 ]
 
 RESULT_FIELDS = "doc_id,source_path,doc_type,chunk_index,start_time,end_time,content,score"
 
 COLLAPSE_BY_DOCUMENT = "{!collapse field=doc_id}"
+
 
 KNN_CHUNKS_PER_RESULT = 5
 
@@ -54,7 +66,6 @@ class SolrError(Exception):
 
 async def ensure_schema() -> dict:
     """Create missing field types and fields. Safe to run many times.
-
 
     Returns {"added": [...], "mismatched": [...]}.
     A mismatched field already exists with another type: Solr cannot change it
@@ -75,6 +86,7 @@ async def ensure_schema() -> dict:
                 response.raise_for_status()
 
             response = await client.get(f"{settings.solr_url}/schema/fields")
+
             response.raise_for_status()
             existing = {item["name"]: item for item in response.json()["fields"]}
 
@@ -87,7 +99,6 @@ async def ensure_schema() -> dict:
                 field["name"]
                 for field in FIELDS
                 if field["name"] in existing
-
                 and existing[field["name"]]["type"] != field["type"]
             ]
 
@@ -108,6 +119,7 @@ async def _post_update(payload, commit: bool) -> None:
     """Send an update request (add / delete / commit) to Solr."""
     params = {"commit": "true"} if commit else {}
     try:
+
         async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(
                 f"{settings.solr_url}/update", params=params, json=payload
@@ -120,7 +132,6 @@ async def _post_update(payload, commit: bool) -> None:
 
 
 async def add_documents(docs: list[dict], commit: bool = False) -> None:
-
     if docs:
         await _post_update(docs, commit)
 
@@ -141,6 +152,7 @@ async def _select(params: dict) -> list[dict]:
     """Run a search request and return the matching Solr documents.
 
     We use POST because a query vector is too long for a URL.
+
     """
     try:
         async with httpx.AsyncClient(timeout=30) as client:
@@ -152,7 +164,6 @@ async def _select(params: dict) -> list[dict]:
         raise SolrError(f"Solr returned {response.status_code}: {response.text[:300]}")
 
     return response.json()["response"]["docs"]
-
 
 
 async def search_chunks(query: str, limit: int = 10) -> list[dict]:
@@ -174,5 +185,6 @@ async def search_vectors(vector: list[float], limit: int = 10) -> list[dict]:
         "q": "{!knn f=vector topK=" + str(top_k) + "}" + str(vector),
         "fq": COLLAPSE_BY_DOCUMENT,
         "fl": RESULT_FIELDS,
+
         "rows": limit,
     })
