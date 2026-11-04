@@ -41,6 +41,12 @@ FIELDS = [
     {"name": "vector", "type": VECTOR_TYPE, "stored": False},
 ]
 
+RESULT_FIELDS = "doc_id,source_path,doc_type,chunk_index,start_time,end_time,content,score"
+
+COLLAPSE_BY_DOCUMENT = "{!collapse field=doc_id}"
+
+KNN_CHUNKS_PER_RESULT = 5
+
 
 class SolrError(Exception):
     """Raised when Solr is unreachable or rejects a request."""
@@ -48,6 +54,7 @@ class SolrError(Exception):
 
 async def ensure_schema() -> dict:
     """Create missing field types and fields. Safe to run many times.
+
 
     Returns {"added": [...], "mismatched": [...]}.
     A mismatched field already exists with another type: Solr cannot change it
@@ -58,7 +65,6 @@ async def ensure_schema() -> dict:
             response = await client.get(f"{settings.solr_url}/schema/fieldtypes")
             response.raise_for_status()
             existing_types = {item["name"] for item in response.json()["fieldTypes"]}
-
 
             missing_types = [t for t in FIELD_TYPES if t["name"] not in existing_types]
             if missing_types:
@@ -81,6 +87,7 @@ async def ensure_schema() -> dict:
                 field["name"]
                 for field in FIELDS
                 if field["name"] in existing
+
                 and existing[field["name"]]["type"] != field["type"]
             ]
 
@@ -91,7 +98,6 @@ async def ensure_schema() -> dict:
                 )
                 response.raise_for_status()
     except httpx.HTTPError as exc:
-
         raise SolrError("Solr is unreachable or rejected the request") from exc
 
     added = [t["name"] for t in missing_types] + [f["name"] for f in missing]
@@ -114,6 +120,7 @@ async def _post_update(payload, commit: bool) -> None:
 
 
 async def add_documents(docs: list[dict], commit: bool = False) -> None:
+
     if docs:
         await _post_update(docs, commit)
 
@@ -126,24 +133,18 @@ async def delete_all(commit: bool = False) -> None:
     await _post_update({"delete": {"query": "*:*"}}, commit)
 
 
-
 async def commit_changes() -> None:
     await _post_update({"commit": {}}, commit=False)
 
 
-async def search_chunks(query: str, limit: int = 10) -> list[dict]:
-    """BM25 search on chunk content, keeping only the best chunk of each document."""
-    params = {
-        "q": query,
-        "defType": "edismax",
-        "qf": "content",
-        "fq": "{!collapse field=doc_id}",
-        "fl": "doc_id,source_path,doc_type,chunk_index,start_time,end_time,content,score",
-        "rows": limit,
-    }
+async def _select(params: dict) -> list[dict]:
+    """Run a search request and return the matching Solr documents.
+
+    We use POST because a query vector is too long for a URL.
+    """
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.get(f"{settings.solr_url}/select", params=params)
+            response = await client.post(f"{settings.solr_url}/select", data=params)
     except httpx.HTTPError as exc:
         raise SolrError("Solr is unreachable") from exc
 
@@ -151,3 +152,27 @@ async def search_chunks(query: str, limit: int = 10) -> list[dict]:
         raise SolrError(f"Solr returned {response.status_code}: {response.text[:300]}")
 
     return response.json()["response"]["docs"]
+
+
+
+async def search_chunks(query: str, limit: int = 10) -> list[dict]:
+    """BM25 search on chunk content, keeping only the best chunk of each document."""
+    return await _select({
+        "q": query,
+        "defType": "edismax",
+        "qf": "content",
+        "fq": COLLAPSE_BY_DOCUMENT,
+        "fl": RESULT_FIELDS,
+        "rows": limit,
+    })
+
+
+async def search_vectors(vector: list[float], limit: int = 10) -> list[dict]:
+    """Nearest-chunk search on the vector field, best chunk of each document."""
+    top_k = limit * KNN_CHUNKS_PER_RESULT
+    return await _select({
+        "q": "{!knn f=vector topK=" + str(top_k) + "}" + str(vector),
+        "fq": COLLAPSE_BY_DOCUMENT,
+        "fl": RESULT_FIELDS,
+        "rows": limit,
+    })
