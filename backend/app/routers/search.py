@@ -4,7 +4,8 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app.indexation.solr_service import SolrError, search_chunks
+from app.indexation.embedding_service import EmbeddingError, embed
+from app.indexation.solr_service import SolrError, search_chunks, search_vectors
 from app.schemas import SearchResponse, SearchResult
 
 logger = logging.getLogger(__name__)
@@ -29,8 +30,11 @@ def fold(text: str) -> str:
 
 
 def make_snippet(text: str, query: str) -> str:
-    """Cut a short piece of text around the first query word found (accents ignored)."""
 
+    """Cut a short piece of text around the first query word found (accents ignored).
+
+    With semantic search the words may be absent: then we show the start of the chunk.
+    """
     folded_text = fold(text)
     positions = []
     for word in query.split():
@@ -46,35 +50,46 @@ def make_snippet(text: str, query: str) -> str:
     return prefix + text[start:end] + suffix
 
 
-@router.get("/search", response_model=SearchResponse)
-async def search(
-    q: str = Query(min_length=2),
-    mode: Literal["keyword", "semantic", "hybrid"] = "keyword",
-    limit: int = Query(default=10, ge=1, le=50),
-):
-    if mode != "keyword":
-        raise HTTPException(status_code=501, detail=f"mode '{mode}' is not implemented yet")
-
-    try:
-        chunks = await search_chunks(q, limit)
-    except SolrError as exc:
-        logger.exception("Solr search failed: %s", exc)
-        raise HTTPException(status_code=503, detail="Search service is unavailable.") from exc
-
+def to_results(chunks: list[dict], query: str) -> list[SearchResult]:
+    """Turn Solr chunks into the API search results."""
     results = []
     for chunk in chunks:
-
         content = as_text(chunk.get("content"))
         results.append(
             SearchResult(
                 id=chunk["doc_id"],
                 source_path=chunk["source_path"],
                 type=chunk["doc_type"],
-                snippet=make_snippet(content, q),
+                snippet=make_snippet(content, query),
                 start=chunk.get("start_time"),
                 end=chunk.get("end_time"),
+
                 score=chunk.get("score"),
             )
         )
+    return results
 
-    return SearchResponse(query=q, mode=mode, results=results)
+
+@router.get("/search", response_model=SearchResponse)
+async def search(
+    q: str = Query(min_length=2),
+    mode: Literal["keyword", "semantic", "hybrid"] = "keyword",
+    limit: int = Query(default=10, ge=1, le=50),
+):
+    if mode == "hybrid":
+        raise HTTPException(status_code=501, detail="mode 'hybrid' is not implemented yet")
+
+    try:
+        if mode == "keyword":
+            chunks = await search_chunks(q, limit)
+        else:
+            [vector] = await embed([q])
+            chunks = await search_vectors(vector, limit)
+    except EmbeddingError as exc:
+        logger.exception("Embedding failed: %s", exc)
+        raise HTTPException(status_code=503, detail="Semantic search is unavailable.") from exc
+    except SolrError as exc:
+        logger.exception("Solr search failed: %s", exc)
+        raise HTTPException(status_code=503, detail="Search service is unavailable.") from exc
+
+    return SearchResponse(query=q, mode=mode, results=to_results(chunks, q))
