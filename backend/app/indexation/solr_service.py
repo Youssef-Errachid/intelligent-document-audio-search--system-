@@ -2,6 +2,8 @@ import httpx
 
 from app.config import settings
 
+VECTOR_TYPE = f"knn_vector_{settings.embedding_dimension}"
+
 FIELD_TYPES = [
     {
         "name": "text_folded",
@@ -16,7 +18,16 @@ FIELD_TYPES = [
             ],
         },
     },
+    {
+        "name": VECTOR_TYPE,
+        "class": "solr.DenseVectorField",
+        "vectorDimension": settings.embedding_dimension,
+        "similarityFunction": "cosine",
+    },
 ]
+
+
+FIELD_DEFAULTS = {"indexed": True, "stored": True, "multiValued": False}
 
 FIELDS = [
     {"name": "doc_id", "type": "string"},
@@ -27,6 +38,7 @@ FIELDS = [
     {"name": "start_time", "type": "pfloat"},
     {"name": "end_time", "type": "pfloat"},
     {"name": "content", "type": "text_folded"},
+    {"name": "vector", "type": VECTOR_TYPE, "stored": False},
 ]
 
 
@@ -47,6 +59,7 @@ async def ensure_schema() -> dict:
             response.raise_for_status()
             existing_types = {item["name"] for item in response.json()["fieldTypes"]}
 
+
             missing_types = [t for t in FIELD_TYPES if t["name"] not in existing_types]
             if missing_types:
                 response = await client.post(
@@ -60,7 +73,7 @@ async def ensure_schema() -> dict:
             existing = {item["name"]: item for item in response.json()["fields"]}
 
             missing = [
-                {**field, "indexed": True, "stored": True, "multiValued": False}
+                {**FIELD_DEFAULTS, **field}
                 for field in FIELDS
                 if field["name"] not in existing
             ]
@@ -78,6 +91,7 @@ async def ensure_schema() -> dict:
                 )
                 response.raise_for_status()
     except httpx.HTTPError as exc:
+
         raise SolrError("Solr is unreachable or rejected the request") from exc
 
     added = [t["name"] for t in missing_types] + [f["name"] for f in missing]
@@ -110,6 +124,7 @@ async def delete_by_doc_id(doc_id: str, commit: bool = False) -> None:
 
 async def delete_all(commit: bool = False) -> None:
     await _post_update({"delete": {"query": "*:*"}}, commit)
+
 
 
 async def commit_changes() -> None:
