@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     mongodb_url: str
     database_name: str
     tika_url: str = "http://localhost:9998"
-    whisper_model_path: str = "Systran/faster-whisper-base"
+    whisper_model_path: str = "models/whisper-base"
     solr_url: str = "http://localhost:8983/solr/documents"
     ollama_url: str = "http://localhost:11434"
     embedding_model: str = "granite-embedding:278m"
