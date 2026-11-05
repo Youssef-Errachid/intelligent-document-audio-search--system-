@@ -1,3 +1,4 @@
+from app.indexation.solr_service import ensure_schema
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,6 +11,17 @@ from app.routers import audio, documents, health, search
 async def lifespan(app: FastAPI):
     await client.admin.command("ping")
     print("Connected to MongoDB")
+
+    schema_result = await ensure_schema()
+    print("Solr schema:", schema_result)
+
+    if schema_result["mismatched"]:
+        raise RuntimeError(
+            f"Solr schema has mismatched fields: {schema_result['mismatched']}"
+        )
+
+    print("Solr schema initialized successfully")
+
     yield
     await client.close()
 
