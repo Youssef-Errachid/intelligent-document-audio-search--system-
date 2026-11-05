@@ -14,7 +14,7 @@ export async function listAudioFiles({ skip = 0, limit = 50, signal } = {}) {
 
 export async function uploadAudio(
     file,
-    { signal, onUploadProgress } = {},
+    { signal, onUploadProgress, vad=false } = {},
 ) {
     const formData = new FormData()
     formData.append('file', file)
