@@ -4,13 +4,13 @@ import { searchDocuments } from '../services/searchService'
 
 export default function useSearch() {
     const [results, setResults] = useState([])
+    const [usedMode, setUsedMode] = useState(null)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState(null)
     const [hasSearched, setHasSearched] = useState(false)
     const controllerRef = useRef(null)
 
-    const search = useCallback(async (query, mode = 'keyword') => {
-        // cancel the previous request if it is still running
+    const search = useCallback(async (query, mode = 'hybrid') => {
         controllerRef.current?.abort()
         const controller = new AbortController()
         controllerRef.current = controller
@@ -24,11 +24,14 @@ export default function useSearch() {
                 signal: controller.signal,
             })
             setResults(data.results)
+            setUsedMode(data.mode)
             setHasSearched(true)
         } catch (err) {
-            if (axios.isCancel(err)) return // replaced by a newer search, ignore
+            if (axios.isCancel(err)) return
             setError(err.message)
+
             setResults([])
+            setUsedMode(null)
             setHasSearched(true)
         } finally {
             // only the latest request is allowed to stop the loading state
@@ -36,10 +39,9 @@ export default function useSearch() {
         }
     }, [])
 
-    // cancel any pending request when the page is closed
     useEffect(() => {
         return () => controllerRef.current?.abort()
     }, [])
 
-    return { results, isLoading, error, hasSearched, search }
+    return { results, usedMode, isLoading, error, hasSearched, search }
 }
