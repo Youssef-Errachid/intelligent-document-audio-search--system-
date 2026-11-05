@@ -33,7 +33,7 @@ export default function SearchResult({ result }) {
 
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="truncate text-sm font-semibold text-slate-900">
+                        <h3 dir="auto" className="truncate text-sm font-semibold text-slate-900">
                             {result.source_path}
                         </h3>
                         <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
@@ -45,7 +45,7 @@ export default function SearchResult({ result }) {
               </span>
                         )}
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                    <p dir="auto" className="mt-2 text-sm leading-6 text-slate-600">
                         {result.snippet}
                     </p>
                 </div>
