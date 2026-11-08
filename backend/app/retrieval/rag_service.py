@@ -1,7 +1,11 @@
+import logging
+
 import httpx
 
 from app.config import settings
 from app.retrieval.search_service import hybrid_search
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
     "You are an assistant that answers questions using ONLY the numbered "
@@ -26,11 +30,11 @@ def as_text(value) -> str:
 
 def build_context(chunks: list[dict]) -> str:
     """Number the chunks so the model can cite them."""
+
     parts = []
     for number, chunk in enumerate(chunks, start=1):
         parts.append(f"[{number}] ({chunk['source_path']})\n{as_text(chunk.get('content'))}")
     return "\n\n".join(parts)
-
 
 
 def build_sources(chunks: list[dict]) -> list[dict]:
@@ -54,16 +58,21 @@ async def call_llm(question: str, context: str) -> str:
     payload = {
         "model": settings.llm_model,
         "stream": False,
+        "keep_alive": "30m",  # keep the model in memory for 30 minutes
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
+
                 "content": f"Passages:\n{context}\n\nQuestion: {question}",
             },
         ],
-        "options": {"temperature": 0.2},
+        "options": {
+            "temperature": 0.2,
+            "num_ctx": 4096,      # context window (prompt + answer)
+            "num_predict": 250,   # maximum tokens in the answer
+        },
     }
-
 
     try:
         async with httpx.AsyncClient(timeout=settings.llm_timeout) as client:
@@ -74,10 +83,20 @@ async def call_llm(question: str, context: str) -> str:
     if response.status_code != 200:
         raise LLMError(f"Ollama returned {response.status_code}: {response.text[:300]}")
 
-    return response.json()["message"]["content"].strip()
+    data = response.json()
+    logger.warning(  # warning so it shows in the uvicorn terminal; switch to info later
+        "LLM: prompt_tokens=%s prompt_s=%.1f gen_tokens=%s gen_s=%.1f load_s=%.1f",
+        data.get("prompt_eval_count"),
+        data.get("prompt_eval_duration", 0) / 1e9,
+        data.get("eval_count"),
+        data.get("eval_duration", 0) / 1e9,
+        data.get("load_duration", 0) / 1e9,
+    )
+    return data["message"]["content"].strip()
 
 
 async def answer_question(question: str) -> dict:
+
     """Full RAG: retrieve chunks, build the prompt, ask the LLM."""
     chunks, mode = await hybrid_search(question, settings.rag_top_k)
 
