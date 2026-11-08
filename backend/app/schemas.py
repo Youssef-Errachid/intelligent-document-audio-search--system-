@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-
+from pydantic import BaseModel, Field
 
 class SearchResult(BaseModel):
     id: str
@@ -40,3 +39,22 @@ class UploadResponse(BaseModel):
     status: str
     duplicate: bool = False
     characters: int | None = None
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=1000)
+
+
+class Source(BaseModel):
+    number: int
+    id: str
+    source_path: str
+    type: str
+    start: float | None = None
+    end: float | None = None
+    excerpt: str
+
+
+class AskResponse(BaseModel):
+    answer: str
+    mode: str
+    sources: list[Source]
