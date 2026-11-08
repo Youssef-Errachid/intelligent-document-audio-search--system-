@@ -4,8 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.database import client
-from app.routers import audio, documents, health, search
-
+from app.routers import assistant, audio, documents, health, search
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,6 +34,7 @@ app.include_router(health.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
 app.include_router(audio.router, prefix="/api")
+app.include_router(assistant.router, prefix="/api")
 
 
 @app.get("/")
