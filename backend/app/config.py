@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     embedding_model: str = "granite-embedding:278m"
     embedding_dimension: int = 768
-     llm_model: str = "qwen2.5:3b"
+    llm_model: str = "qwen2.5:3b"
 
     model_config = SettingsConfigDict(env_file=".env")
 
