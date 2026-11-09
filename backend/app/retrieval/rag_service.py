@@ -96,9 +96,13 @@ async def call_llm(question: str, context: str) -> str:
 
 
 async def answer_question(question: str) -> dict:
-
-    """Full RAG: retrieve chunks, build the prompt, ask the LLM."""
-    chunks, mode = await hybrid_search(question, settings.rag_top_k)
+    """Full RAG: retrieve chunks, drop the irrelevant ones, ask the LLM."""
+    chunks, mode = await hybrid_search(question, settings.rag_top_k, prefer_semantic=True)
+    if mode == "hybrid":
+        chunks = [
+            chunk for chunk in chunks
+            if (chunk.get("vector_score") or 0) >= settings.rag_min_score
+        ]
 
     if not chunks:
         return {
