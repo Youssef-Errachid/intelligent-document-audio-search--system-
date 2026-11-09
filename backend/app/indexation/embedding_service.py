@@ -16,7 +16,7 @@ async def embed(texts: list[str]) -> list[list[float]]:
         async with httpx.AsyncClient(timeout=300) as client:
             response = await client.post(
                 f"{settings.ollama_url}/api/embed",
-                json={"model": settings.embedding_model, "input": texts},
+                json={"model": settings.embedding_model, "input": texts, "keep_alive": "30m",},
             )
     except httpx.HTTPError as exc:
         raise EmbeddingError("Ollama is unreachable") from exc

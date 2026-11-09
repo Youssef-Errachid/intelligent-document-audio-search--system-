@@ -11,7 +11,6 @@ class Settings(BaseSettings):
     embedding_model: str = "granite-embedding:278m"
     embedding_dimension: int = 768
     llm_model: str = "qwen2.5:3b"
-    llm_model: str = "qwen2.5:3b"
     llm_timeout: int = 300
     rag_top_k: int = 3
 
