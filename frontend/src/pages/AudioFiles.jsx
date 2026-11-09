@@ -26,10 +26,10 @@ export default function AudioFiles() {
         <section className="space-y-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+                    <p className="eyebrow">
                         Library
                     </p>
-                    <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
                         Audio files
                     </h1>
                     <p className="mt-2 text-slate-500">
@@ -43,7 +43,7 @@ export default function AudioFiles() {
                         onClick={refresh}
                         disabled={isLoading}
                         aria-label="Refresh audio files"
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
                     >
                         <RefreshCw size={17} />
                         Refresh
@@ -51,7 +51,7 @@ export default function AudioFiles() {
 
                     <Link
                         to="/audio/upload"
-                        className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+                        className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 hover:bg-brand-700"
                     >
                         <Upload size={17} />
                         Upload audio
@@ -59,7 +59,7 @@ export default function AudioFiles() {
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="surface rounded-2xl p-4">
                 <label htmlFor="audio-search" className="mb-2 block text-sm font-medium text-slate-700">
                     Filter by filename
                 </label>
@@ -108,10 +108,10 @@ export default function AudioFiles() {
                     {filteredFiles.map((file) => (
                         <article
                             key={file.id || file._id || file.source_path}
-                            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                            className="surface rounded-2xl p-5 transition hover:-translate-y-0.5 hover:shadow-lg"
                         >
                             <div className="flex items-start gap-3">
-                                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
                                     <AudioLines size={22} />
                                 </div>
 

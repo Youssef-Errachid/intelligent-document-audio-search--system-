@@ -25,13 +25,13 @@ export default function Search() {
     }
 
     return (
-        <section className="mx-auto max-w-3xl space-y-6">
+        <section className="mx-auto max-w-5xl space-y-6">
             <div>
-                <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+                <p className="eyebrow">
                     Discover
 
                 </p>
-                <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
                     Search your knowledge
                 </h2>
                 <p className="mt-2 text-base leading-7 text-slate-500">
@@ -63,7 +63,7 @@ export default function Search() {
 
             {showEmpty && (
 
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+                <div className="surface rounded-2xl border-dashed p-10 text-center text-sm text-slate-500">
                     No results found. Try different words or another search mode.
                 </div>
             )}

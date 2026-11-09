@@ -32,22 +32,22 @@ export default function Documents() {
   }
 
   return (
-      <section className="mx-auto max-w-4xl space-y-6">
+      <section className="space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+            <p className="eyebrow">
               Library
             </p>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
               Documents
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              {isLoading ? 'Loading...' : `${total} item${total === 1 ? '' : 's'}`}
+              {isLoading ? 'Syncing your library...' : `${total} indexed item${total === 1 ? '' : 's'}`}
             </p>
           </div>
           <Link
               to="/upload/documents"
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition-colors hover:bg-brand-700"
           >
             <Upload size={16} aria-hidden="true" />
             Upload document
@@ -63,8 +63,8 @@ export default function Documents() {
                   aria-pressed={type === filter.value}
                   className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
                       type === filter.value
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
+                          ? 'bg-slate-950 text-white'
+                          : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-brand-50 hover:text-brand-700'
                   }`}
               >
                 {filter.label}

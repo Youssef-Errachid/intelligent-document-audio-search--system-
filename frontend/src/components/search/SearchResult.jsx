@@ -21,11 +21,11 @@ export default function SearchResult({ result }) {
         typeof result.start === 'number' && typeof result.end === 'number'
 
     return (
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="surface rounded-2xl p-5 transition hover:shadow-lg">
             <div className="flex items-start gap-4">
         <span
             className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                isAudio ? 'bg-sky-50 text-sky-600' : 'bg-indigo-50 text-indigo-600'
+                isAudio ? 'bg-teal-50 text-teal-700' : 'bg-brand-50 text-brand-700'
             }`}
         >
           <Icon size={20} aria-hidden="true" />

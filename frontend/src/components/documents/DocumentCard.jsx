@@ -13,11 +13,11 @@ export default function DocumentCard({ item }) {
     const Icon = isAudio ? AudioLines : FileText
 
     return (
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="surface rounded-2xl p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
             <div className="flex items-start gap-4">
                 <span
                     className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                        isAudio ? 'bg-sky-50 text-sky-600' : 'bg-indigo-50 text-indigo-600'
+                        isAudio ? 'bg-teal-50 text-teal-700' : 'bg-brand-50 text-brand-700'
                     }`}
                 >
                     <Icon size={20} aria-hidden="true" />
@@ -25,7 +25,7 @@ export default function DocumentCard({ item }) {
 
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <h3 dir="auto" className="truncate text-sm font-semibold text-slate-900">
+                        <h3 dir="auto" className="truncate text-sm font-semibold text-slate-950">
                             {item.source_path}
                         </h3>
                         <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
@@ -38,7 +38,7 @@ export default function DocumentCard({ item }) {
                             </span>
                         )}
                         {item.status && (
-                            <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                            <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                 {item.status}
                             </span>
                         )}

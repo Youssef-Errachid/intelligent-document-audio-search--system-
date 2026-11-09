@@ -79,22 +79,22 @@ export default function UploadDocuments() {
   const activeIsHidden = activeItem && !visibleItems.includes(activeItem)
 
   return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-4xl space-y-6">
         <div>
           <Link
               to="/"
-              className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-emerald-600"
+              className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-brand-700"
           >
             <ArrowLeft size={17} />
             Back to Dashboard
           </Link>
 
           <div className="flex items-start gap-4">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
               <FileSearch size={30} />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                 Extract from Documents
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">
@@ -120,9 +120,9 @@ export default function UploadDocuments() {
             role="button"
             tabIndex={0}
             aria-label="Choose documents"
-            className="cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center transition hover:border-emerald-400 hover:bg-emerald-50/30"
+            className="surface cursor-pointer rounded-2xl border-2 border-dashed px-6 py-12 text-center transition hover:border-brand-500 hover:bg-brand-50/30"
         >
-          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-950/20">
             <FileUp size={28} />
           </div>
           <h2 className="mt-4 text-lg font-semibold text-slate-900">

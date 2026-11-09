@@ -61,13 +61,13 @@ export default function Assistant() {
   }
 
   return (
-      <section className="mx-auto max-w-3xl space-y-6">
+      <section className="mx-auto max-w-4xl space-y-6">
         <div>
 
-          <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+          <p className="eyebrow">
             Intelligence
           </p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
             AI Assistant
           </h2>
           <p className="mt-2 text-base leading-7 text-slate-500">
@@ -85,12 +85,12 @@ export default function Assistant() {
               placeholder="Ask a question about your content..."
               aria-label="Question"
               maxLength={1000}
-              className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
+              className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
           />
           <button
               type="submit"
               disabled={!canSubmit}
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send size={16} aria-hidden="true" />
             Ask
@@ -119,7 +119,7 @@ export default function Assistant() {
 
         {response && (
             <div className="space-y-4" aria-live="polite">
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="surface rounded-2xl p-6">
                 <p dir="auto" className="whitespace-pre-line text-sm leading-7 text-slate-800">
                   {response.answer}
                 </p>

@@ -29,13 +29,13 @@ export default function MainLayout() {
   }, [])
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen text-slate-900">
       {isSidebarOpen && (
         <button
           type="button"
           aria-label="Close navigation menu"
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-slate-950/30 lg:hidden"
+          className="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-sm lg:hidden"
         />
       )}
       <Sidebar
@@ -49,7 +49,7 @@ export default function MainLayout() {
           onMenuClick={() => setIsSidebarOpen(true)}
         />
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto w-full max-w-[1480px] p-4 sm:p-6 lg:p-10">
             <Outlet />
           </div>
         </main>

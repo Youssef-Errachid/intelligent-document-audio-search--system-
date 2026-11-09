@@ -80,12 +80,12 @@ export default function UploadAudio() {
     const activeIsHidden = activeItem && !visibleItems.includes(activeItem)
 
     return (
-        <section className="mx-auto max-w-3xl space-y-6">
+        <section className="mx-auto max-w-4xl space-y-6">
             <div>
-                <p className="text-sm font-semibold uppercase tracking-wider text-indigo-600">
+                <p className="eyebrow">
                     Audio workspace
                 </p>
-                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
                     Upload audio
                 </h1>
                 <p className="mt-2 leading-7 text-slate-500">
@@ -93,7 +93,7 @@ export default function UploadAudio() {
                 </p>
             </div>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+            <label className="surface flex cursor-pointer items-start gap-3 rounded-2xl p-4">
                 <input
                     type="checkbox"
                     checked={vad}
@@ -127,9 +127,9 @@ export default function UploadAudio() {
                 role="button"
                 tabIndex={0}
                 aria-label="Choose audio files"
-                className="cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-12 text-center transition hover:border-indigo-400 hover:bg-indigo-50/30"
+                className="surface cursor-pointer rounded-2xl border-2 border-dashed px-6 py-12 text-center transition hover:border-brand-500 hover:bg-brand-50/30"
             >
-                <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-slate-950 text-white">
                     <FileAudio size={28} />
                 </div>
                 <h2 className="mt-4 text-lg font-semibold text-slate-900">
