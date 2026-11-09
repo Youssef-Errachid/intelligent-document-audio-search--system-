@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     llm_model: str = "qwen2.5:3b"
     llm_timeout: int = 300
     rag_top_k: int = 3
+    rag_min_score: float = 0.85
 
     model_config = SettingsConfigDict(env_file=".env")
 
