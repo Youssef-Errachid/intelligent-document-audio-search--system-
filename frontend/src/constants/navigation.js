@@ -1,17 +1,17 @@
 import {
-  AudioLines,
-  Bot,
+  CloudUpload,
   FileText,
-  LayoutDashboard,
+  Headphones,
+  MessageSquare,
   Search,
   Settings,
 } from 'lucide-react'
 
 export const navigationItems = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard, end: true },
-  { label: 'Documents', to: '/documents', icon: FileText },
+  { label: 'Chat', to: '/', icon: MessageSquare, end: true },
   { label: 'Search', to: '/search', icon: Search },
-  { label: 'Audio Files', to: '/audio', icon: AudioLines },
-  { label: 'AI Assistant', to: '/assistant', icon: Bot },
+  { label: 'Documents', to: '/documents', icon: FileText },
+  { label: 'Audio Files', to: '/audio', icon: Headphones },
+  { label: 'Upload', to: '/upload/documents', icon: CloudUpload },
   { label: 'Settings', to: '/settings', icon: Settings },
 ]

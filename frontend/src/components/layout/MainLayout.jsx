@@ -1,59 +1,41 @@
-import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import Header from './Header'
-import Sidebar from './Sidebar'
+import IconRail from './IconRail'
+import TopBar from './TopBar'
 
 const pageTitles = {
-  '/': 'Dashboard',
+  '/': 'Ask, search, discover',
   '/search': 'Search',
   '/documents': 'Documents',
-  '/upload/documents': 'Extract Documents',
-  '/audio': 'Audio Files',
+  '/upload/documents': 'Extract documents',
+  '/audio': 'Audio files',
+  '/audio/upload': 'Upload audio',
   '/assistant': 'AI Assistant',
   '/settings': 'Settings',
   '/404': 'Page not found',
 }
 
 export default function MainLayout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const location = useLocation()
-  const title = pageTitles[location.pathname] ?? 'DocuMind AI'
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setIsSidebarOpen(false)
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  const { pathname } = useLocation()
+  const title = pageTitles[pathname] ?? 'DocuMind AI'
+  const isChat = pathname === '/'
 
   return (
-    <div className="flex min-h-screen text-slate-900">
-      {isSidebarOpen && (
-        <button
-          type="button"
-          aria-label="Close navigation menu"
-          onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-sm lg:hidden"
-        />
-      )}
-      <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Header
-          title={title}
-          isSidebarOpen={isSidebarOpen}
-          onMenuClick={() => setIsSidebarOpen(true)}
-        />
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1480px] p-4 sm:p-6 lg:p-10">
-            <Outlet />
-          </div>
-        </main>
+      <div className="flex h-screen flex-col gap-4 bg-gradient-to-br from-[#ececee] to-[#f7f7f8] p-4 pb-24 text-slate-900 lg:pb-4">
+        <TopBar title={title} />
+
+        <div className="flex min-h-0 flex-1 gap-4">
+          <IconRail />
+          <main className="min-h-0 min-w-0 flex-1">
+            {isChat ? (
+                <Outlet />
+            ) : (
+
+                <div className="h-full overflow-y-auto rounded-[28px] border border-black/5 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+                  <Outlet />
+                </div>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
   )
 }
