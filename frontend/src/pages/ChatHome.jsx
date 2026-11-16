@@ -10,9 +10,9 @@ import useChat from '../hooks/useChat'
 const USER_NAME = 'Mouad'
 
 const SUGGESTIONS = [
-    'Summarise my latest document',
-    'What was decided in the last meeting?',
-    'Find files about invoices',
+    'من هو المقرئ في حصة الذكر الحكيم يوم 28 دجنبر 2021؟',
+    'من هو المقرئ في حصة الذكر الحكيم يوم 22 مارس 2022؟',
+    'في أي ساعة يبدأ الإرسال بالنشيد الوطني؟',
 ]
 
 export default function ChatHome() {
@@ -114,7 +114,7 @@ export default function ChatHome() {
                                     className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                                 >
                                     <Sparkles size={14} className="text-orange-500" aria-hidden="true" />
-                                    {text}
+                                    <span dir="auto">{text}</span>
                                 </button>
                             ))}
                         </div>
