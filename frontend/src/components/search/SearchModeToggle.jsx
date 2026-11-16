@@ -20,11 +20,11 @@ export default function SearchModeToggle({ mode, onChange }) {
     const current = MODES.find((item) => item.value === mode)
 
     return (
-        <div>
+        <div className="flex flex-col items-center gap-2">
             <div
                 role="group"
                 aria-label="Search mode"
-                className="inline-flex rounded-xl bg-slate-100 p-1"
+                className="inline-flex rounded-full bg-slate-100 p-1"
             >
                 {MODES.map((item) => (
                     <button
@@ -33,17 +33,17 @@ export default function SearchModeToggle({ mode, onChange }) {
 
                         onClick={() => onChange(item.value)}
                         aria-pressed={mode === item.value}
-                        className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                             mode === item.value
-                                ? 'bg-white text-indigo-700 shadow-sm'
-                                : 'text-slate-600 hover:text-slate-900'
+                                ? 'bg-white text-slate-900 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-900'
                         }`}
                     >
                         {item.label}
                     </button>
                 ))}
             </div>
-            <p className="mt-2 text-xs text-slate-500">{current?.hint}</p>
+            <p className="text-center text-xs text-slate-400">{current?.hint}</p>
         </div>
     )
 }
