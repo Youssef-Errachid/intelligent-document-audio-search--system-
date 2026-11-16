@@ -1,0 +1,112 @@
+import { Loader2, Plus, Search, Sparkles } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import Composer from '../components/chat/Composer'
+import EmptyState from '../components/chat/EmptyState'
+import MessageBubble from '../components/chat/MessageBubble'
+import useChat from '../hooks/useChat'
+
+const USER_NAME = 'Mouad'
+
+const SUGGESTIONS = [
+    'Summarise my latest document',
+    'What was decided in the last meeting?',
+    'Find files about invoices',
+]
+
+export default function ChatHome() {
+    const { messages, isLoading, send, reset } = useChat()
+    const bottomRef = useRef(null)
+    const isEmpty = messages.length === 0
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }, [messages, isLoading])
+
+    return (
+        <section className="flex h-full min-h-0 flex-col rounded-[28px] border border-black/5 bg-white shadow-sm">
+            <header className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
+                <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white">
+                        <Sparkles size={20} aria-hidden="true" />
+                    </span>
+
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">DocuMind AI</p>
+                        <p className="flex items-center gap-1.5 truncate text-xs text-slate-500">
+                            <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                            Answers come only from your files
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                    <Link
+                        to="/search"
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                        <Search size={15} aria-hidden="true" />
+                        <span className="hidden sm:inline">Search</span>
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={reset}
+                        disabled={isEmpty && !isLoading}
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        <Plus size={15} aria-hidden="true" />
+                        <span className="hidden sm:inline">New chat</span>
+                    </button>
+                </div>
+            </header>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-8">
+                {isEmpty && !isLoading ? (
+                    <EmptyState name={USER_NAME} />
+
+                ) : (
+                    <div className="mx-auto max-w-3xl space-y-6" aria-live="polite">
+                        {messages.map((message) => (
+                            <MessageBubble key={message.id} message={message} />
+                        ))}
+
+                        {isLoading && (
+                            <div
+                                role="status"
+                                className="flex items-center gap-3 text-sm text-slate-500"
+                            >
+                                <Loader2 size={16} className="shrink-0 animate-spin" aria-hidden="true" />
+                                Searching your content and writing the answer. This can take up to a minute.
+                            </div>
+                        )}
+                        <div ref={bottomRef} />
+                    </div>
+                )}
+            </div>
+
+            <div className="mx-auto w-full max-w-3xl space-y-3 px-5 pb-5 sm:px-8">
+                {isEmpty && !isLoading && (
+                    <div className="flex flex-wrap justify-center gap-2">
+                        {SUGGESTIONS.map((text) => (
+                            <button
+                                key={text}
+                                type="button"
+                                onClick={() => send(text)}
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                                <Sparkles size={14} className="text-orange-500" aria-hidden="true" />
+                                {text}
+
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <Composer onSend={send} disabled={isLoading} />
+                <p className="text-center text-xs text-slate-400">
+                    Answers are based only on your files, with sources.
+                </p>
+            </div>
+        </section>
+    )
+}
