@@ -6,9 +6,11 @@ export default function TopBar({ title }) {
         <header className="flex shrink-0 items-center justify-between gap-4 px-1">
             <div className="flex min-w-0 items-center gap-4">
                 {/* Temporary logo: replace with <img src="/logo.svg" /> when ready */}
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-orange-400 lg:size-14">
-                    <Sparkles size={22} aria-hidden="true" />
-                </div>
+                <img
+                    src="/logo.webp"
+                    alt="DocuMind AI"
+                    className="size-12 shrink-0 object-contain lg:size-14"
+                />
                 <div className="min-w-0">
                     <p className="truncate text-[11px] font-medium uppercase tracking-wide text-slate-500">
                         DocuMind AI · Document &amp; Audio Assistant
