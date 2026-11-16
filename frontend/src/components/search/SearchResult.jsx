@@ -21,28 +21,29 @@ export default function SearchResult({ result }) {
         typeof result.start === 'number' && typeof result.end === 'number'
 
     return (
-        <article className="surface rounded-2xl p-5 transition hover:shadow-lg">
+        <article className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-slate-300 hover:shadow-sm">
             <div className="flex items-start gap-4">
-        <span
-            className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                isAudio ? 'bg-teal-50 text-teal-700' : 'bg-brand-50 text-brand-700'
-            }`}
-        >
-          <Icon size={20} aria-hidden="true" />
-        </span>
+                <span
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
+                        isAudio ? 'bg-sky-50 text-sky-600' : 'bg-orange-50 text-orange-600'
+                    }`}
+                >
+                    <Icon size={19} aria-hidden="true" />
+                </span>
+
 
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                         <h3 dir="auto" className="truncate text-sm font-semibold text-slate-900">
                             {result.source_path}
                         </h3>
-                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              {typeLabels[result.type] ?? result.type}
-            </span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                            {typeLabels[result.type] ?? result.type}
+                        </span>
                         {hasTime && (
-                            <span className="rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
-                {formatTime(result.start)} – {formatTime(result.end)}
-              </span>
+                            <span className="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700">
+                                {formatTime(result.start)} – {formatTime(result.end)}
+                            </span>
                         )}
                     </div>
                     <p dir="auto" className="mt-2 text-sm leading-6 text-slate-600">

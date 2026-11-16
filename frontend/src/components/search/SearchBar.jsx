@@ -1,41 +1,45 @@
-import { Search } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRight, Loader2, Search } from 'lucide-react'
 
 const MIN_LENGTH = 2 // same rule as the backend (min_length=2)
 
-export default function SearchBar({ onSearch, isLoading }) {
-    const [value, setValue] = useState('')
+export default function SearchBar({ value, onChange, onSubmit, isLoading }) {
     const trimmed = value.trim()
-    const canSubmit = trimmed.length >= MIN_LENGTH
+    const canSubmit = trimmed.length >= MIN_LENGTH && !isLoading
 
     const handleSubmit = (event) => {
         event.preventDefault()
-        if (canSubmit) onSearch(trimmed)
+        if (canSubmit) onSubmit(trimmed)
     }
 
     return (
-        <form onSubmit={handleSubmit} role="search" className="flex gap-3">
-            <div className="relative flex-1">
-                <Search
-                    size={18}
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                    type="search"
-                    value={value}
-                    onChange={(event) => setValue(event.target.value)}
-                    placeholder="Search documents and audio..."
-                    aria-label="Search"
-                    className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100"
-                />
-            </div>
+        <form
+            onSubmit={handleSubmit}
+            role="search"
+            className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-2 pl-5 pr-2 shadow-sm transition focus-within:border-slate-300 focus-within:ring-4 focus-within:ring-slate-100"
+        >
+            <Search size={18} aria-hidden="true" className="shrink-0 text-slate-400" />
+            <input
+                type="search"
+                dir="auto"
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder="Search documents and audio..."
+                aria-label="Search"
+                className="min-w-0 flex-1 bg-transparent px-1 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+            />
             <button
                 type="submit"
                 disabled={!canSubmit}
-                className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+
+                aria-label="Search"
+                className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-slate-900 px-5 text-sm font-medium text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
-                {isLoading ? 'Searching...' : 'Search'}
+                {isLoading ? (
+                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                ) : (
+                    <ArrowRight size={16} aria-hidden="true" />
+                )}
+                <span className="hidden sm:inline">{isLoading ? 'Searching' : 'Search'}</span>
             </button>
         </form>
     )
