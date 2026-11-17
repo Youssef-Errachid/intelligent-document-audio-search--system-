@@ -24,7 +24,7 @@ const statusStyles = {
     },
 }
 
-export default function DocumentCard({ item }) {
+export default function DocumentCard({ item, hideType = false }) {
     const isAudio = item.type === 'audio'
     const Icon = isAudio ? AudioLines : FileText
     const status = item.status
@@ -59,9 +59,11 @@ export default function DocumentCard({ item }) {
                 )}
 
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                        {typeLabels[item.type] ?? item.type}
-                    </span>
+                    {!hideType && (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                         {typeLabels[item.type] ?? item.type}
+                        </span>
+                    )}
                     {item.language && (
 
                         <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium uppercase text-slate-600">
