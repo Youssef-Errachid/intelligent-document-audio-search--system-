@@ -1,158 +1,71 @@
+import { FileAudio, Search, Upload } from 'lucide-react'
 import { useState } from 'react'
-import { AudioLines, Clock3, FileAudio, RefreshCw, Upload } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import useAudio from '../hooks/useAudio'
+import Pagination from '../components/common/Pagination'
+import DocumentList from '../components/documents/DocumentList'
+import useDocuments from '../hooks/useDocuments'
 
-function formatDate(value) {
-    if (!value) return 'Date unavailable'
-
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return 'Date unavailable'
-
-    return date.toLocaleDateString()
-}
+const PAGE_SIZE = 10
 
 export default function AudioFiles() {
-    const { files, isLoading, error, refresh } = useAudio()
-    const [query, setQuery] = useState('')
+    const [page, setPage] = useState(0)
+    const { items, total, error, isLoading } = useDocuments({
+        type: 'audio',
+        page,
+        pageSize: PAGE_SIZE,
+    })
 
-    const filteredFiles = files.filter((file) =>
-        (file.source_path || file.filename || '')
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-    )
+    const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1)
 
     return (
-        <section className="space-y-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+        <section className="mx-auto max-w-4xl space-y-6 py-2 sm:py-4">
+            <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <p className="eyebrow">
-                        Library
-                    </p>
-                    <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
+                    <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                         Audio files
-                    </h1>
-                    <p className="mt-2 text-slate-500">
-                        Browse audio recordings and their extracted transcripts.
+                    </h2>
+                    <p className="mt-1.5 text-sm text-slate-500">
+                        {isLoading
+                            ? 'Loading...'
+                            : `${total} recording${total === 1 ? '' : 's'} with their transcripts`}
                     </p>
                 </div>
 
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={refresh}
-                        disabled={isLoading}
-                        aria-label="Refresh audio files"
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
-                    >
-                        <RefreshCw size={17} />
-                        Refresh
-                    </button>
 
+                <div className="flex items-center gap-2">
                     <Link
-                        to="/audio/upload"
-                        className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 hover:bg-brand-700"
+                        to="/search"
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
-                        <Upload size={17} />
+                        <Search size={16} aria-hidden="true" />
+                        Search transcripts
+                    </Link>
+                    <Link
+                        to="/upload?type=audio"
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700"
+                    >
+                        <Upload size={16} aria-hidden="true" />
                         Upload audio
                     </Link>
                 </div>
             </div>
 
-            <div className="surface rounded-2xl p-4">
-                <label htmlFor="audio-search" className="mb-2 block text-sm font-medium text-slate-700">
-                    Filter by filename
-                </label>
-                <input
-                    id="audio-search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search audio filenames..."
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                />
-            </div>
+            <DocumentList
+                items={items}
+                isLoading={isLoading}
+                error={error}
+                hideType
+                empty={{
+                    Icon: FileAudio,
+                    title: 'No audio files yet',
+                    hint: 'Upload a recording to see its transcript here.',
+                    actionTo: '/upload?type=audio',
+                    actionLabel: 'Upload audio',
+                }}
+            />
 
-            {error && (
-                <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {error}
-                </div>
-            )}
 
-            {isLoading ? (
-                <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
-                    Loading audio files...
-                </div>
-            ) : filteredFiles.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-                    <FileAudio size={34} className="mx-auto text-slate-400" />
-                    <h2 className="mt-4 font-semibold text-slate-900">
-                        {query ? 'No matching files' : 'No audio files yet'}
-                    </h2>
-                    <p className="mt-2 text-sm text-slate-500">
-                        {query
-                            ? 'Try another filename.'
-                            : 'Upload an audio recording to see it in your library.'}
-                    </p>
-                    {!query && (
-                        <Link
-                            to="/audio/upload"
-                            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
-                        >
-                            <Upload size={16} />
-                            Upload your first audio file
-                        </Link>
-                    )}
-                </div>
-            ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                    {filteredFiles.map((file) => (
-                        <article
-                            key={file.id || file._id || file.source_path}
-                            className="surface rounded-2xl p-5 transition hover:-translate-y-0.5 hover:shadow-lg"
-                        >
-                            <div className="flex items-start gap-3">
-                                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                                    <AudioLines size={22} />
-                                </div>
-
-                                <div className="min-w-0 flex-1">
-                                    <h2 className="break-words font-semibold text-slate-900">
-                                        {file.source_path || file.filename || 'Untitled audio'}
-                                    </h2>
-
-                                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                        {file.status && (
-                                            <span className="rounded-md bg-emerald-50 px-2 py-1 font-medium text-emerald-700">
-                                                {file.status}
-                                            </span>
-                                        )}
-                                        {file.created_at && (
-                                            <span className="inline-flex items-center gap-1">
-                                                <Clock3 size={13} />
-                                                {formatDate(file.created_at)}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {file.text && (
-                                <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
-                                    {file.text.length > 260
-                                        ? `${file.text.slice(0, 260)}…`
-                                        : file.text}
-                                </p>
-                            )}
-
-                            {typeof file.characters === 'number' && (
-                                <p className="mt-3 text-xs text-slate-400">
-                                    {file.characters.toLocaleString()} characters
-                                </p>
-                            )}
-                        </article>
-                    ))}
-                </div>
-            )}
+            <Pagination page={page} totalPages={totalPages} onChange={setPage} />
         </section>
     )
 }
