@@ -12,6 +12,6 @@ export const navigationItems = [
   { label: 'Search', to: '/search', icon: Search },
   { label: 'Documents', to: '/documents', icon: FileText },
   { label: 'Audio Files', to: '/audio', icon: Headphones },
-  { label: 'Upload', to: '/upload/documents', icon: CloudUpload },
+  { label: 'Upload', to: '/upload', icon: CloudUpload },
   { label: 'Settings', to: '/settings', icon: Settings },
 ]
