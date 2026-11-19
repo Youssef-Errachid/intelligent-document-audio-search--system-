@@ -1,20 +1,63 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --font-sans: "Inter", "SF Pro Display", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: #eef4ff;
-  --color-brand-100: #dce8ff;
-  --color-brand-500: #4778e8;
-  --color-brand-600: #3564d4;
-  --color-brand-700: #284fac;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-white: #131a29;
+  --color-black: #ffffff;
+  --color-slate-50: #1a2233;
+  --color-slate-100: #212a3d;
+  --color-slate-200: #2b3549;
+  --color-slate-300: #3a455c;
+  --color-slate-400: #697590;
+  --color-slate-500: #8c97ad;
+  --color-slate-600: #aab3c5;
+  --color-slate-700: #c9d0de;
+  --color-slate-800: #e2e7f0;
+  --color-slate-900: #f3f5fa;
+  --color-slate-950: #ffffff;
+
+
+  --color-orange-50: rgb(251 146 60 / 0.12);
+  --color-orange-100: rgb(251 146 60 / 0.2);
+  --color-orange-600: #fb923c;
+  --color-orange-700: #fdba74;
+  --color-sky-50: rgb(14 165 233 / 0.12);
+  --color-sky-600: #38bdf8;
+  --color-sky-700: #7dd3fc;
+  --color-emerald-50: rgb(16 185 129 / 0.12);
+  --color-emerald-700: #6ee7b7;
+  --color-amber-50: rgb(245 158 11 / 0.12);
+  --color-amber-200: rgb(245 158 11 / 0.3);
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-red-50: rgb(239 68 68 / 0.12);
+  --color-red-200: rgb(239 68 68 / 0.3);
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
+  --color-indigo-50: rgb(99 102 241 / 0.15);
+  --color-indigo-600: #818cf8;
+  --color-indigo-700: #a5b4fc;
 }
 
 :root {
   font-family: var(--font-sans);
-  color: #182238;
-  background: #f5f7fb;
+  color: #0f172a;
+  background: #f8fafc;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+:root.dark {
+
+  color: #f3f5fa;
+  background: #0a0d14;
 }
 
 * {
@@ -25,35 +68,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at 75% -10%, rgba(84, 125, 232, 0.1), transparent 30rem),
-    #f5f7fb;
 }
 
 button,
 a {
   -webkit-tap-highlight-color: transparent;
-}
-
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid rgba(71, 120, 232, 0.3);
-  outline-offset: 2px;
-}
-
-.surface {
-  border: 1px solid #e6eaf2;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 12px 32px rgba(28, 43, 76, 0.06);
-  backdrop-filter: blur(12px);
-}
-
-.eyebrow {
-  color: #5674b8;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }

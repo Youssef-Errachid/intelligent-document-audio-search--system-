@@ -1,5 +1,6 @@
 import { Bell, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import ThemeToggle from './ThemeToggle'
 
 export default function TopBar({ title }) {
     return (
@@ -34,6 +35,7 @@ export default function TopBar({ title }) {
                     </kbd>
 
                 </Link>
+                <ThemeToggle />
                 <button
                     type="button"
                     aria-label="Notifications"
