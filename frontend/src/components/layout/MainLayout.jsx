@@ -19,7 +19,7 @@ export default function MainLayout() {
   const isChat = pathname === '/'
 
   return (
-      <div className="flex h-screen flex-col gap-4 bg-gradient-to-br from-[#ececee] to-[#f7f7f8] p-4 pb-24 text-slate-900 lg:pb-4">
+      <div className="flex h-screen flex-col gap-4 bg-gradient-to-br from-[#ececee] to-[#f7f7f8] dark:from-[#0a0d14] dark:to-[#0f1420] p-4 pb-24 text-slate-900 lg:pb-4">
         <TopBar title={title} />
 
         <div className="flex min-h-0 flex-1 gap-4">

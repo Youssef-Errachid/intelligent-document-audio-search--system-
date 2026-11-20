@@ -7,7 +7,7 @@ import EmptyState from '../components/chat/EmptyState'
 import MessageBubble from '../components/chat/MessageBubble'
 import useChat from '../hooks/useChat'
 
-const USER_NAME = 'Mouad'
+const USER_NAME = 'Youssef'
 
 const SUGGESTIONS = [
     'من هو المقرئ في حصة الذكر الحكيم يوم 28 دجنبر 2021؟',

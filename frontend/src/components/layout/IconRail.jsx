@@ -33,7 +33,7 @@ export default function IconRail() {
                 title="Mouad"
                 className="relative hidden size-11 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-700 lg:flex"
             >
-                M
+                Y
                 <span className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-white bg-emerald-500" />
             </div>
         </aside>
