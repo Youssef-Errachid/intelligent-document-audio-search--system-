@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     llm_timeout: int = 300
     rag_top_k: int = 3
     rag_min_score: float = 0.85
+    jwt_secret: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
+    auth_cookie_secure: bool = False  # True in production (HTTPS)
 
     model_config = SettingsConfigDict(env_file=".env")
 

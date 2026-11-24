@@ -1,6 +1,7 @@
 import { Bell, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
+import UserMenu from './UserMenu'
 
 export default function TopBar({ title }) {
     return (
@@ -43,6 +44,7 @@ export default function TopBar({ title }) {
                 >
                     <Bell size={18} aria-hidden="true" />
                 </button>
+                <UserMenu />
             </div>
         </header>
     )

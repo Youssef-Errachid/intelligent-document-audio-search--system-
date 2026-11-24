@@ -29,7 +29,7 @@ def fuse(rankings: list[list[dict]], limit: int) -> list[dict]:
 
 
 async def hybrid_search(
-    query: str, limit: int, prefer_semantic: bool = False
+    query: str, limit: int, prefer_semantic: bool = False, owner_id: str | None = None
 
 ) -> tuple[list[dict], str]:
     """Keyword and semantic search merged with RRF. Returns (chunks, mode used).
@@ -40,7 +40,7 @@ async def hybrid_search(
     contains the query words (better for the search page).
     """
     candidates = limit * HYBRID_CANDIDATES_PER_RESULT
-    keyword_chunks = await search_chunks(query, candidates)
+    keyword_chunks = await search_chunks(query, candidates, owner_id=owner_id)
 
     try:
         [vector] = await embed([query])
@@ -48,7 +48,7 @@ async def hybrid_search(
         logger.warning("Ollama is unavailable, hybrid search falls back to keyword search")
         return keyword_chunks[:limit], "keyword"
 
-    semantic_chunks = await search_vectors(vector, candidates)
+    semantic_chunks = await search_vectors(vector, candidates, owner_id=owner_id)
     vector_scores = {chunk["doc_id"]: chunk["score"] for chunk in semantic_chunks}
 
     if prefer_semantic:

@@ -4,9 +4,10 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from starlette.concurrency import run_in_threadpool
 
+from app.auth.dependencies import get_current_user
 from app.extraction.audio.fingerprint import AudioDecodeError, calculate_decoded_audio_hash
 from app.extraction.audio.transcriber import transcribe_audio
 from app.database import database
@@ -40,6 +41,7 @@ async def upload_audio(
     response: Response,
     file: UploadFile = File(...),
     vad: bool = Form(False),
+    user: dict = Depends(get_current_user),
 ):
     filename = Path(file.filename or "").name
     extension = Path(filename).suffix.lower()
@@ -59,7 +61,9 @@ async def upload_audio(
     collection = database["documents"]
 
     file_hash = sha256_bytes(content)
-    existing = await collection.find_one({"type": "audio", "hash.file": file_hash})
+    existing = await collection.find_one(
+        {"owner_id": user["_id"], "type": "audio", "hash.file": file_hash}
+    )
     if existing:
         response.status_code = 200
         return duplicate_response(existing)
@@ -78,7 +82,9 @@ async def upload_audio(
                 status_code=422, detail="The audio file could not be decoded."
             ) from exc
 
-        existing = await collection.find_one({"type": "audio", "hash.audio": audio_hash})
+        existing = await collection.find_one(
+            {"owner_id": user["_id"], "type": "audio", "hash.audio": audio_hash}
+        )
         if existing:
             response.status_code = 200
             return duplicate_response(existing)
@@ -100,6 +106,7 @@ async def upload_audio(
     text = extracted["text"]
 
     document = {
+        "owner_id": user["_id"],
         "source_path": filename,
         "type": "audio",
         "text": text,
