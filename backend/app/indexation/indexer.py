@@ -27,6 +27,7 @@ def build_solr_docs(doc: dict) -> list[dict]:
         solr_doc = {
             "id": f"{doc_id}_{chunk['chunk_index']}",
             "doc_id": doc_id,
+            "owner_id": str(doc["owner_id"]) if doc.get("owner_id") else None,
             "source_path": doc.get("source_path"),
 
             "doc_type": doc.get("type"),

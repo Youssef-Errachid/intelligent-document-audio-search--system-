@@ -95,9 +95,11 @@ async def call_llm(question: str, context: str) -> str:
     return data["message"]["content"].strip()
 
 
-async def answer_question(question: str) -> dict:
+async def answer_question(question: str, owner_id: str | None = None) -> dict:
     """Full RAG: retrieve chunks, drop the irrelevant ones, ask the LLM."""
-    chunks, mode = await hybrid_search(question, settings.rag_top_k, prefer_semantic=True)
+    chunks, mode = await hybrid_search(
+        question, settings.rag_top_k, prefer_semantic=True, owner_id=owner_id
+    )
     if mode == "hybrid":
         chunks = [
             chunk for chunk in chunks

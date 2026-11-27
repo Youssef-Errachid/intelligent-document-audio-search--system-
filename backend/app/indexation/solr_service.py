@@ -42,6 +42,7 @@ FIELD_DEFAULTS = {"indexed": True, "stored": True, "multiValued": False}
 
 FIELDS = [
     {"name": "doc_id", "type": "string"},
+    {"name": "owner_id", "type": "string"},
     {"name": "source_path", "type": "string"},
     {"name": "doc_type", "type": "string"},
     {"name": "language", "type": "string"},
@@ -55,6 +56,17 @@ FIELDS = [
 RESULT_FIELDS = "doc_id,source_path,doc_type,chunk_index,start_time,end_time,content,score"
 
 COLLAPSE_BY_DOCUMENT = "{!collapse field=doc_id}"
+
+
+def _filters(owner_id: str | None) -> list[str]:
+    """Collapse to one chunk per document, restricted to the owner when given.
+
+    owner_id is None only for internal scripts; API routers always pass it.
+    """
+    filters = [COLLAPSE_BY_DOCUMENT]
+    if owner_id is not None:
+        filters.append(f'owner_id:"{owner_id}"')
+    return filters
 
 
 KNN_CHUNKS_PER_RESULT = 5
@@ -166,24 +178,28 @@ async def _select(params: dict) -> list[dict]:
     return response.json()["response"]["docs"]
 
 
-async def search_chunks(query: str, limit: int = 10) -> list[dict]:
+async def search_chunks(
+    query: str, limit: int = 10, owner_id: str | None = None
+) -> list[dict]:
     """BM25 search on chunk content, keeping only the best chunk of each document."""
     return await _select({
         "q": query,
         "defType": "edismax",
         "qf": "content",
-        "fq": COLLAPSE_BY_DOCUMENT,
+        "fq": _filters(owner_id),
         "fl": RESULT_FIELDS,
         "rows": limit,
     })
 
 
-async def search_vectors(vector: list[float], limit: int = 10) -> list[dict]:
+async def search_vectors(
+    vector: list[float], limit: int = 10, owner_id: str | None = None
+) -> list[dict]:
     """Nearest-chunk search on the vector field, best chunk of each document."""
     top_k = limit * KNN_CHUNKS_PER_RESULT
     return await _select({
         "q": "{!knn f=vector topK=" + str(top_k) + "}" + str(vector),
-        "fq": COLLAPSE_BY_DOCUMENT,
+        "fq": _filters(owner_id),
         "fl": RESULT_FIELDS,
 
         "rows": limit,

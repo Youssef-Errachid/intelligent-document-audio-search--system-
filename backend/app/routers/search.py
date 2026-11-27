@@ -2,8 +2,9 @@ import logging
 import unicodedata
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.auth.dependencies import get_current_user
 from app.indexation.embedding_service import EmbeddingError, embed
 from app.indexation.solr_service import SolrError, search_chunks, search_vectors
 from app.retrieval.search_service import hybrid_search
@@ -74,15 +75,17 @@ async def search(
     q: str = Query(min_length=2),
     mode: Literal["keyword", "semantic", "hybrid"] = "keyword",
     limit: int = Query(default=10, ge=1, le=50),
+    user: dict = Depends(get_current_user),
 ):
+    owner_id = str(user["_id"])
     try:
         if mode == "keyword":
-            chunks = await search_chunks(q, limit)
+            chunks = await search_chunks(q, limit, owner_id=owner_id)
         elif mode == "semantic":
             [vector] = await embed([q])
-            chunks = await search_vectors(vector, limit)
+            chunks = await search_vectors(vector, limit, owner_id=owner_id)
         else:
-            chunks, mode = await hybrid_search(q, limit)
+            chunks, mode = await hybrid_search(q, limit, owner_id=owner_id)
     except EmbeddingError as exc:
         logger.exception("Embedding failed: %s", exc)
         raise HTTPException(status_code=503, detail="Semantic search is unavailable.") from exc

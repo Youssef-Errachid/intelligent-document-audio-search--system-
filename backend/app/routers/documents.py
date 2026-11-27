@@ -2,8 +2,9 @@ import os
 from datetime import datetime, timezone
 from typing import Literal
 
-from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
 
+from app.auth.dependencies import get_current_user
 from app.database import database
 from app.schemas import DocumentListResponse, DocumentSummary, UploadResponse
 from app.extraction.hash_service import sha256_bytes, sha256_text
@@ -24,9 +25,12 @@ async def list_documents(
     ),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
+    user: dict = Depends(get_current_user),
 ):
     collection = database["documents"]
-    query = {"type": doc_type} if doc_type else {}
+    query = {"owner_id": user["_id"]}
+    if doc_type:
+        query["type"] = doc_type
 
     total = await collection.count_documents(query)
 
@@ -73,7 +77,11 @@ def duplicate_response(doc: dict) -> UploadResponse:
 
 
 @router.post("/documents", response_model=UploadResponse, status_code=201)
-async def upload_document(response: Response, file: UploadFile = File(...)):
+async def upload_document(
+    response: Response,
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
     filename = os.path.basename(file.filename or "")
     extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if extension not in ALLOWED_EXTENSIONS:
@@ -92,7 +100,9 @@ async def upload_document(response: Response, file: UploadFile = File(...)):
     projection = {"source_path": 1, "type": 1, "status": 1}
 
     file_hash = sha256_bytes(content)
-    existing = await collection.find_one({"hash.file": file_hash}, projection)
+    existing = await collection.find_one(
+        {"owner_id": user["_id"], "hash.file": file_hash}, projection
+    )
     if existing:
         response.status_code = 200
         return duplicate_response(existing)
@@ -107,12 +117,15 @@ async def upload_document(response: Response, file: UploadFile = File(...)):
         raise HTTPException(status_code=422, detail="No text could be extracted from this file.")
 
     text_hash = sha256_text(text)
-    existing = await collection.find_one({"hash.text": text_hash}, projection)
+    existing = await collection.find_one(
+        {"owner_id": user["_id"], "hash.text": text_hash}, projection
+    )
     if existing:
         response.status_code = 200
         return duplicate_response(existing)
 
     document = {
+        "owner_id": user["_id"],
         "source_path": filename,
         "type": extension,
         "hash": {"file": file_hash, "text": text_hash},

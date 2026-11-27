@@ -1,4 +1,36 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=72)
+    name: str = Field(min_length=1, max_length=100)
+
+    @field_validator("password")
+    @classmethod
+    def password_byte_length(cls, value: str) -> str:
+        # bcrypt refuses passwords longer than 72 bytes (UTF-8, not characters)
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("Password must be at most 72 bytes.")
+        return value
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=72)
+
+
+class UserOut(BaseModel):
+    id: str
+    email: str
+    name: str
+    role: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
 
 class SearchResult(BaseModel):
     id: str
